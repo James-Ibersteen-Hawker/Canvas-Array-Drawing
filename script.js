@@ -25,15 +25,34 @@ class Game {
   async LUT_init(LUT) {
     const text = await (await fetch(LUT)).text();
     const list = text.replace(/\r?\n/g, "//").split("//");
-    const converter = (n) => {
-      n = n.split(" ");
-      return (n[0] << 16) | (n[1] << 8) | n[2];
-    };
-    this.LUT = new Array(list.length)
-      .fill(null)
-      .map((_, i) => converter(list[i]));
-    document.getElementById("temp-display").textContent = this.LUT;
+    this.LUT = Array.from({ length: list.length }, (_, i) =>
+      list[i].split(" ")
+    );
+    this.octree(this.LUT);
+  }
+  octree(coords) {
+    class OCTREE {
+      constructor(level, dataset) {
+        this.range_x = coords.length;
+        this.range_y = coords.length;
+        this.range_z = coords.length;
+        this.level = level;
+        this.dataset = dataset;
+      }
+      make() {
+        //HOW??? I need to talk to Papa about JS and in theory
+      }
+      search(point) {
+        //return closest match
+      }
+    }
+    //level 0
+    //how to make subranges without explicitly spelling it out???
+    //256 / 8 => 32, 32 / 8 => 4, only 4 distances
   }
 }
 
 let myGame = new Game("/Xterm.txt");
+function log(arg) {
+  document.getElementById("temp-display").textContent = arg;
+}
