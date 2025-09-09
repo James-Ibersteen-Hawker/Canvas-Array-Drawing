@@ -31,24 +31,31 @@ class Game {
     this.octree(this.LUT);
   }
   octree(coords) {
-    class OCTREE {
-      constructor(level, dataset) {
-        this.range_x = coords.length;
-        this.range_y = coords.length;
-        this.range_z = coords.length;
-        this.level = level;
-        this.dataset = dataset;
+    class Octree {
+      constructor(dataset) {
+        this.max = dataset;
+        this.DATA = dataset;
+        this.TREE = null;
       }
-      make() {
-        //HOW??? I need to talk to Papa about JS and in theory
-      }
-      search(point) {
-        //return closest match
+      make(dataset) {
+        log(dataset);
+        let [mX, mY, mZ] = dataset[0];
+        let [mxX, mxY, mxZ] = dataset[0];
+        dataset.forEach(([x, y, z]) => {
+          // alert(`${x}, ${y}, ${z}`);
+          if (x < mX) mX = x;
+          else if (x > mxX) mxX = x;
+          if (y < mY) mY = y;
+          else if (y > mxY) mxY = y;
+          if (z < mZ) mZ = z;
+          else if (z > mxZ) mxZ = z;
+        });
+        log(
+          `mX,mY,mZ: ${mX}, ${mY}, ${mZ}, mxX,mxY,mxZ: ${mxX}, ${mxY}, ${mxZ}`
+        );
       }
     }
-    //level 0
-    //how to make subranges without explicitly spelling it out???
-    //256 / 8 => 32, 32 / 8 => 4, only 4 distances
+    new Octree(coords).make(coords);
   }
 }
 
