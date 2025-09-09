@@ -9,7 +9,6 @@ class Uint8 extends Uint8Array {
 }
 function INIT(w, h) {
   const SCREEN = new Uint8(w * h).fill(0);
-  console.log(SCREEN);
 }
 INIT(50, 50);
 
@@ -42,7 +41,7 @@ class Game {
         let [mX, mY, mZ] = dataset[0];
         let [mxX, mxY, mxZ] = dataset[0];
         dataset.forEach(([x, y, z]) => {
-          // alert(`${x}, ${y}, ${z}`);
+          [x, y, z] = [Number(x), Number(y), Number(z)];
           if (x < mX) mX = x;
           else if (x > mxX) mxX = x;
           if (y < mY) mY = y;
