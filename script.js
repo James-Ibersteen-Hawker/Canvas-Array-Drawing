@@ -32,11 +32,13 @@ class Game {
   octree(coords) {
     class Octree {
       constructor(dataset) {
-        this.max = dataset;
+        this.max = dataset.length;
         this.DATA = dataset;
-        this.TREE = null;
+        this.TREE = this.make(this.DATA);
       }
       make(dataset) {
+        if (!dataset || dataset.length <= 0 || !Array.isArray(dataset)) return;
+        const self = this;
         let [mX, mY, mZ] = dataset[0];
         let [mxX, mxY, mxZ] = dataset[0];
         dataset.forEach(([x, y, z]) => {
@@ -47,11 +49,26 @@ class Game {
           if (z < mZ) mZ = z;
           else if (z > mxZ) mxZ = z;
         });
+        const dX = (mxX - mX) / 2 + mX;
+        const dY = (mxY - mY) / 2 + mY;
+        const dZ = (mxZ - mZ) / 2 + mZ;
         class Node {
           constructor(xInit, xFinal, yInit, yFinal, zInit, zFinal) {
             this.CLOUD = [];
+            this.SUB = null;
+            this.xRange = [xInit, xFinal];
+            this.yRange = [yInit, yFinal];
+            this.zRange = [zInit, zFinal];
+            this.threshold = 4;
           }
-          divide() {}
+          divide() {
+            try {
+              if (this.CLOUD.length <= this.threshold) return;
+              else this.SUB = self.make(this.CLOUD);
+            } catch (error) {
+              alert(error);
+            }
+          }
         }
         const Super = {
           mX,
@@ -60,27 +77,47 @@ class Game {
           mxX,
           mxY,
           mxZ,
-          dX: Math.floor((mxX - mX) / 2 + mX),
-          dY: Math.floor((mxY - mY) / 2 + mY),
-          dZ: Math.floor((mxZ - mZ) / 2 + mZ),
+          dX,
+          dY,
+          dZ,
           Nodes: [
             new Node(mX, dX, mY, dY, mZ, dZ),
-            new Node(dX + 1, mxX, mY, dY, mZ, dZ),
-            new Node(mX, dX, dY + 1, mxY, mZ, dZ),
-            new Node(dX + 1, mxX, dY + 1, mxY, mZ, dZ),
-            new Node(mX, dX, mY, dY, dZ + 1, mxZ),
-            new Node(mX, dX, dY + 1, mxY, dZ + 1, mxZ),
-            new Node(dX + 1, mxX, mY, dY, dZ + 1, mxZ),
-            new Node(dX + 1, mxX, dY + 1, mxY, dZ + 1, mxZ),
+            new Node(dX + 0.001, mxX, mY, dY, mZ, dZ),
+            new Node(mX, dX, dY + 0.001, mxY, mZ, dZ),
+            new Node(dX + 0.001, mxX, dY + 0.001, mxY, mZ, dZ),
+            new Node(mX, dX, mY, dY, dZ + 0.001, mxZ),
+            new Node(mX, dX, dY + 0.001, mxY, dZ + 0.001, mxZ),
+            new Node(dX + 0.001, mxX, mY, dY, dZ + 0.001, mxZ),
+            new Node(dX + 0.001, mxX, dY + 0.001, mxY, dZ + 0.001, mxZ),
           ],
         };
-
-        dataset.forEach((e) => {});
-        log(Object.entries(Super));
+        for (let i = 0; i < dataset.length; i++) {
+          Nodeloop: for (let q = 0; q < Super.Nodes.length; q++) {
+            const { xRange, yRange, zRange } = Super.Nodes[q];
+            const [x, y, z] = dataset[i];
+            if (
+              x >= xRange[0] &&
+              x <= xRange[1] &&
+              y >= yRange[0] &&
+              y <= yRange[1] &&
+              z >= zRange[0] &&
+              z <= zRange[1]
+            ) {
+              Super.Nodes[q].CLOUD.push(dataset[i]);
+              break Nodeloop;
+            }
+          }
+        }
+        for (let i = 0; i < Super.Nodes.length; i++) {
+          const node = Super.Nodes[i];
+          if (node.CLOUD.length <= 0) continue;
+          node.divide();
+        }
+        console.log(Super);
         return Super;
       }
     }
-    new Octree(coords).make(coords);
+    new Octree(coords);
   }
 }
 
