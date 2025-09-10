@@ -32,8 +32,8 @@ class Game {
   octree(coords) {
     class Octree {
       constructor(dataset) {
-        this.max = dataset.length;
         this.DATA = dataset;
+        this.LeafThreshold = 4;
         this.TREE = this.make(this.DATA);
       }
       make(dataset) {
@@ -59,42 +59,26 @@ class Game {
             this.xRange = [xInit, xFinal];
             this.yRange = [yInit, yFinal];
             this.zRange = [zInit, zFinal];
-            this.threshold = 4;
           }
           divide() {
-            try {
-              if (this.CLOUD.length <= this.threshold) return;
-              else this.SUB = self.make(this.CLOUD);
-            } catch (error) {
-              alert(error);
-            }
+            if (this.CLOUD.length <= self.LeafThreshold) return;
+            else this.SUB = self.make(this.CLOUD);
           }
         }
-        const Super = {
-          mX,
-          mY,
-          mZ,
-          mxX,
-          mxY,
-          mxZ,
-          dX,
-          dY,
-          dZ,
-          Nodes: [
-            new Node(mX, dX, mY, dY, mZ, dZ),
-            new Node(dX + 0.001, mxX, mY, dY, mZ, dZ),
-            new Node(mX, dX, dY + 0.001, mxY, mZ, dZ),
-            new Node(dX + 0.001, mxX, dY + 0.001, mxY, mZ, dZ),
-            new Node(mX, dX, mY, dY, dZ + 0.001, mxZ),
-            new Node(mX, dX, dY + 0.001, mxY, dZ + 0.001, mxZ),
-            new Node(dX + 0.001, mxX, mY, dY, dZ + 0.001, mxZ),
-            new Node(dX + 0.001, mxX, dY + 0.001, mxY, dZ + 0.001, mxZ),
-          ],
-        };
-        for (let i = 0; i < dataset.length; i++) {
-          Nodeloop: for (let q = 0; q < Super.Nodes.length; q++) {
-            const { xRange, yRange, zRange } = Super.Nodes[q];
-            const [x, y, z] = dataset[i];
+        let Nodes = [
+          new Node(mX, dX, mY, dY, mZ, dZ),
+          new Node(dX + 0.001, mxX, mY, dY, mZ, dZ),
+          new Node(mX, dX, dY + 0.001, mxY, mZ, dZ),
+          new Node(dX + 0.001, mxX, dY + 0.001, mxY, mZ, dZ),
+          new Node(mX, dX, mY, dY, dZ + 0.001, mxZ),
+          new Node(mX, dX, dY + 0.001, mxY, dZ + 0.001, mxZ),
+          new Node(dX + 0.001, mxX, mY, dY, dZ + 0.001, mxZ),
+          new Node(dX + 0.001, mxX, dY + 0.001, mxY, dZ + 0.001, mxZ),
+        ];
+        dataset.forEach((e) => {
+          Nodeloop: for (let q = 0; q < Nodes.length; q++) {
+            const { xRange, yRange, zRange } = Nodes[q];
+            const [x, y, z] = e;
             if (
               x >= xRange[0] &&
               x <= xRange[1] &&
@@ -103,21 +87,42 @@ class Game {
               z >= zRange[0] &&
               z <= zRange[1]
             ) {
-              Super.Nodes[q].CLOUD.push(dataset[i]);
+              Nodes[q].CLOUD.push(e);
               break Nodeloop;
             }
           }
+        });
+        Nodes = Nodes.filter((e) => {
+          if (e.CLOUD.length <= 0) return false;
+          else e.divide();
+          return true;
+        });
+        return Nodes;
+      }
+      search(point, set = this.TREE) {
+        let results = [];
+        for (let i = 0; i < set.length; i++) {
+          const { xRange, yRange, zRange } = set[i];
+          const [x, y, z] = point;
+          if (
+            x >= xRange[0] &&
+            x <= xRange[1] &&
+            y >= yRange[0] &&
+            y <= yRange[1] &&
+            z >= zRange[0] &&
+            z <= zRange[1]
+          ) {
+            if (set[i].SUB !== null) this.search(point, set[i].SUB);
+            break;
+          }
         }
-        for (let i = 0; i < Super.Nodes.length; i++) {
-          const node = Super.Nodes[i];
-          if (node.CLOUD.length <= 0) continue;
-          node.divide();
-        }
-        console.log(Super);
-        return Super;
+        return results;
       }
     }
-    new Octree(coords);
+    let myTree = new Octree(coords);
+    // console.log(myTree);
+    console.log([0, 0, 0]);
+    console.log(myTree.search([0, 0, 0]));
   }
 }
 
