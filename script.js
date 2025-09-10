@@ -1,6 +1,7 @@
 "use strict";
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
+let myTree;
 class Uint8 extends Uint8Array {
   constructor(arg) {
     super(arg);
@@ -112,17 +113,15 @@ class Game {
             z >= zRange[0] &&
             z <= zRange[1]
           ) {
-            if (set[i].SUB !== null) this.search(point, set[i].SUB);
+            if (!set[i].SUB) return set[i].CLOUD;
+            else if (set[i].SUB) results = this.search(point, set[i].SUB); //if it has a sub, then go into the sub. If not, return the found Cloud all the way back up.
             break;
           }
         }
         return results;
       }
     }
-    let myTree = new Octree(coords);
-    // console.log(myTree);
-    console.log([0, 0, 0]);
-    console.log(myTree.search([0, 0, 0]));
+    myTree = new Octree(coords);
   }
 }
 
