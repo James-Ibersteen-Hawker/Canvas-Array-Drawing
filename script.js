@@ -25,7 +25,7 @@ class Game {
     const text = await (await fetch(LUT)).text();
     const list = text.replace(/\r?\n/g, "//").split("//");
     this.LUT = Array.from({ length: list.length }, (_, i) =>
-      list[i].split(" ")
+      list[i].split(" ").map((e) => Number(e))
     );
     this.octree(this.LUT);
   }
@@ -37,11 +37,9 @@ class Game {
         this.TREE = null;
       }
       make(dataset) {
-        log(dataset);
         let [mX, mY, mZ] = dataset[0];
         let [mxX, mxY, mxZ] = dataset[0];
         dataset.forEach(([x, y, z]) => {
-          [x, y, z] = [Number(x), Number(y), Number(z)];
           if (x < mX) mX = x;
           else if (x > mxX) mxX = x;
           if (y < mY) mY = y;
@@ -49,9 +47,37 @@ class Game {
           if (z < mZ) mZ = z;
           else if (z > mxZ) mxZ = z;
         });
-        log(
-          `mX,mY,mZ: ${mX}, ${mY}, ${mZ}, mxX,mxY,mxZ: ${mxX}, ${mxY}, ${mxZ}`
-        );
+        class Node {
+          constructor(xInit, xFinal, yInit, yFinal, zInit, zFinal) {
+            this.CLOUD = [];
+          }
+          divide() {}
+        }
+        const Super = {
+          mX,
+          mY,
+          mZ,
+          mxX,
+          mxY,
+          mxZ,
+          dX: Math.floor((mxX - mX) / 2 + mX),
+          dY: Math.floor((mxY - mY) / 2 + mY),
+          dZ: Math.floor((mxZ - mZ) / 2 + mZ),
+          Nodes: [
+            new Node(mX, dX, mY, dY, mZ, dZ),
+            new Node(dX + 1, mxX, mY, dY, mZ, dZ),
+            new Node(mX, dX, dY + 1, mxY, mZ, dZ),
+            new Node(dX + 1, mxX, dY + 1, mxY, mZ, dZ),
+            new Node(mX, dX, mY, dY, dZ + 1, mxZ),
+            new Node(mX, dX, dY + 1, mxY, dZ + 1, mxZ),
+            new Node(dX + 1, mxX, mY, dY, dZ + 1, mxZ),
+            new Node(dX + 1, mxX, dY + 1, mxY, dZ + 1, mxZ),
+          ],
+        };
+
+        dataset.forEach((e) => {});
+        log(Object.entries(Super));
+        return Super;
       }
     }
     new Octree(coords).make(coords);
