@@ -28,9 +28,9 @@ class Game {
     this.LUT = Array.from({ length: list.length }, (_, i) =>
       list[i].split(" ").map((e) => Number(e))
     );
-    this.octree(this.LUT);
+    // this.octree(this.LUT);
     const myArray = new Array(1000).fill(null).map((_, i) => [i, i + 1]);
-    // this.quadtree(myArray);
+    this.quadtree(myArray);
   }
   octree(coords) {
     class Octree {
@@ -103,7 +103,6 @@ class Game {
         return Nodes;
       }
       search(point, set = this.TREE) {
-        let results = [];
         for (let i = 0; i < set.length; i++) {
           const { xRange, yRange, zRange } = set[i];
           const [x, y, z] = point;
@@ -115,13 +114,10 @@ class Game {
             z >= zRange[0] &&
             z <= zRange[1]
           ) {
-            if (!set[i].SUB) return set[i].CLOUD;
-            else if (set[i].SUB) results = this.search(point, set[i].SUB);
-            break;
+            if (!set[i].SUB) return this.closest(point, set[i].CLOUD);
+            else if (set[i].SUB) return this.search(point, set[i].SUB);
           }
         }
-        // return results;
-        return this.closest(point, results);
       }
       closest(point, set) {
         let match = set[0];
@@ -150,6 +146,7 @@ class Game {
         this.DATA = dataset;
         this.LeafThreshold = 4;
         this.TREE = this.make(this.DATA);
+        this.FOUND = false;
       }
       make(dataset) {
         if (!dataset || dataset.length <= 0 || !Array.isArray(dataset)) return;
@@ -205,7 +202,6 @@ class Game {
         return Nodes;
       }
       search(point, set = this.TREE) {
-        let results = [];
         for (let i = 0; i < set.length; i++) {
           const { xRange, yRange } = set[i];
           const [x, y] = point;
@@ -215,43 +211,29 @@ class Game {
             y >= yRange[0] &&
             y <= yRange[1]
           ) {
-            if (!set[i].SUB) return set[i].CLOUD;
-            else if (set[i].SUB) results = this.search(point, set[i].SUB);
-            break;
+            if (!set[i].SUB) return this.closest(point, set[i].CLOUD);
+            else if (set[i].SUB) return this.search(point, set[i].SUB);
           }
         }
-        // return results;
-        return this.closest(point, results);
       }
       closest(point, set) {
         let match = set[0];
         let matchDist = null;
         const [iX, iY] = point;
-        // try {
-        //   alert(set.join(" // "));
-        //   set.forEach(([x, y]) => {});
-        // } catch (error) {
-        //   alert(error);
-        // }
-        // set.forEach(([x, y]) => {
-        //   try {
-        //     const distance = Math.sqrt(
-        //       Math.pow(x - iX, 2) + Math.pow(y - iY, 2)
-        //     );
-        //     if (!matchDist) matchDist = distance;
-        //     else if (distance < matchDist) {
-        //       matchDist = distance;
-        //       match = [x, y];
-        //     }
-        //   } catch (error) {
-        //     alert(error);
-        //   }
-        // });
+        set.forEach(([x, y]) => {
+          const distance = Math.sqrt(Math.pow(x - iX, 2) + Math.pow(y - iY, 2));
+          if (!matchDist) matchDist = distance;
+          else if (distance < matchDist) {
+            matchDist = distance;
+            match = [x, y];
+          }
+        });
         return match;
       }
     }
+    const point = [1, 1];
     const myQuad = new Quadtree(coords);
-    log(myQuad.search([90, 90]));
+    log(`${point} : ${myQuad.search(point)}`);
   }
 }
 
