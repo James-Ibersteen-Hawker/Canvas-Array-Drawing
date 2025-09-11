@@ -114,14 +114,33 @@ class Game {
             z <= zRange[1]
           ) {
             if (!set[i].SUB) return set[i].CLOUD;
-            else if (set[i].SUB) results = this.search(point, set[i].SUB); //if it has a sub, then go into the sub. If not, return the found Cloud all the way back up.
+            else if (set[i].SUB) results = this.search(point, set[i].SUB);
             break;
           }
         }
-        return results;
+        // return results;
+        return this.closest(point, results);
+      }
+      closest(point, set) {
+        let match = set[0];
+        let matchDist = null;
+        const [iX, iY, iZ] = point;
+        set.forEach(([x, y, z]) => {
+          const distance = Math.sqrt(
+            Math.pow(x - iX, 2) + Math.pow(y - iY, 2) + Math.pow(z - iZ, 2)
+          );
+          if (!matchDist) matchDist = distance;
+          else if (distance < matchDist) {
+            matchDist = distance;
+            match = [x, y, z];
+          }
+          return match;
+        });
       }
     }
     myTree = new Octree(coords);
+    let point = [37, 64, 87];
+    log(`${point} : ${myTree.search(point).join(" // ")}`);
   }
 }
 
