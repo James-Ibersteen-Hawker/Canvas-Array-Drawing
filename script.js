@@ -29,6 +29,8 @@ class Game {
       list[i].split(" ").map((e) => Number(e))
     );
     this.octree(this.LUT);
+    const myArray = new Array(1000).fill(null).map((_, i) => [i, i + 1]);
+    // this.quadtree(myArray);
   }
   octree(coords) {
     class Octree {
@@ -139,8 +141,117 @@ class Game {
       }
     }
     myTree = new Octree(coords);
-    let point = [215, 64, 87];
+    let point = [230, 4, 3];
     log(`${point} : ${myTree.search(point)}`);
+  }
+  quadtree(coords) {
+    class Quadtree {
+      constructor(dataset) {
+        this.DATA = dataset;
+        this.LeafThreshold = 4;
+        this.TREE = this.make(this.DATA);
+      }
+      make(dataset) {
+        if (!dataset || dataset.length <= 0 || !Array.isArray(dataset)) return;
+        const self = this;
+        let [mX, mY] = dataset[0];
+        let [mxX, mxY] = dataset[0];
+        dataset.forEach(([x, y]) => {
+          if (x < mX) mX = x;
+          else if (x > mxX) mxX = x;
+          if (y < mY) mY = y;
+          else if (y > mxY) mxY = y;
+        });
+        const dX = (mxX - mX) / 2 + mX;
+        const dY = (mxY - mY) / 2 + mY;
+        class Node {
+          constructor(xInit, xFinal, yInit, yFinal) {
+            this.CLOUD = [];
+            this.SUB = null;
+            this.xRange = [xInit, xFinal];
+            this.yRange = [yInit, yFinal];
+          }
+          divide() {
+            if (this.CLOUD.length <= self.LeafThreshold) return;
+            else this.SUB = self.make(this.CLOUD);
+          }
+        }
+        let Nodes = [
+          new Node(mX, dX, mY, dY),
+          new Node(dX + 0.001, mxX, mY, dY),
+          new Node(mX, dX, dY + 0.001, mxY),
+          new Node(dX + 0.001, mxX, dY + 0.001, mxY),
+        ];
+        dataset.forEach((e) => {
+          Nodeloop: for (let q = 0; q < Nodes.length; q++) {
+            const { xRange, yRange } = Nodes[q];
+            const [x, y] = e;
+            if (
+              x >= xRange[0] &&
+              x <= xRange[1] &&
+              y >= yRange[0] &&
+              y <= yRange[1]
+            ) {
+              Nodes[q].CLOUD.push(e);
+              break Nodeloop;
+            }
+          }
+        });
+        Nodes = Nodes.filter((e) => {
+          if (e.CLOUD.length <= 0) return false;
+          else e.divide();
+          return true;
+        });
+        return Nodes;
+      }
+      search(point, set = this.TREE) {
+        let results = [];
+        for (let i = 0; i < set.length; i++) {
+          const { xRange, yRange } = set[i];
+          const [x, y] = point;
+          if (
+            x >= xRange[0] &&
+            x <= xRange[1] &&
+            y >= yRange[0] &&
+            y <= yRange[1]
+          ) {
+            if (!set[i].SUB) return set[i].CLOUD;
+            else if (set[i].SUB) results = this.search(point, set[i].SUB);
+            break;
+          }
+        }
+        // return results;
+        return this.closest(point, results);
+      }
+      closest(point, set) {
+        let match = set[0];
+        let matchDist = null;
+        const [iX, iY] = point;
+        // try {
+        //   alert(set.join(" // "));
+        //   set.forEach(([x, y]) => {});
+        // } catch (error) {
+        //   alert(error);
+        // }
+        // set.forEach(([x, y]) => {
+        //   try {
+        //     const distance = Math.sqrt(
+        //       Math.pow(x - iX, 2) + Math.pow(y - iY, 2)
+        //     );
+        //     if (!matchDist) matchDist = distance;
+        //     else if (distance < matchDist) {
+        //       matchDist = distance;
+        //       match = [x, y];
+        //     }
+        //   } catch (error) {
+        //     alert(error);
+        //   }
+        // });
+        return match;
+      }
+    }
+    const myQuad = new Quadtree(coords);
+    log(myQuad.search([90, 90]));
   }
 }
 
