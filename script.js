@@ -134,13 +134,13 @@ class Game {
             matchDist = distance;
             match = [x, y, z];
           }
-          return match;
         });
+        return match;
       }
     }
     myTree = new Octree(coords);
-    let point = [37, 64, 87];
-    log(`${point} : ${myTree.search(point).join(" // ")}`);
+    let point = [215, 64, 87];
+    log(`${point} : ${myTree.search(point)}`);
   }
 }
 
