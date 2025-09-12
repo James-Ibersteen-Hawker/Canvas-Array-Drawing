@@ -1,39 +1,14 @@
 "use strict";
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
-let myTree;
-class Uint8 extends Uint8Array {
-  constructor(arg) {
-    super(arg);
-    this.GET = (y, x) => this[y * h + x];
-  }
-}
-function INIT(w, h) {
-  const SCREEN = new Uint8(w * h).fill(0);
-}
-INIT(50, 50);
-
 class Game {
   LUT_SRC;
-  constructor(LUT_SRC) {
+  CANVAS;
+  constructor(LUT_SRC, CANVAS) {
     this.LUT = [];
-    this.init(LUT_SRC);
-  }
-  init(LUT) {
-    this.LUT_init(LUT);
-  }
-  async LUT_init(LUT) {
-    const text = await (await fetch(LUT)).text();
-    const list = text.replace(/\r?\n/g, "//").split("//");
-    this.LUT = Array.from({ length: list.length }, (_, i) =>
-      list[i].split(" ").map((e) => Number(e))
-    );
-    // this.octree(this.LUT);
-    const myArray = new Array(1000).fill(null).map((_, i) => [i, i + 1]);
-    this.quadtree(myArray);
-  }
-  octree(coords) {
-    class Octree {
+    this.COLORTREE;
+    this.CANVAS = CANVAS;
+    this.CTX = this.CANVAS.getContext("2d");
+    //structures
+    this.Octree = class Octree {
       constructor(dataset) {
         this.DATA = dataset;
         this.LeafThreshold = 4;
@@ -135,13 +110,8 @@ class Game {
         });
         return match;
       }
-    }
-    myTree = new Octree(coords);
-    let point = [230, 4, 3];
-    log(`${point} : ${myTree.search(point)}`);
-  }
-  quadtree(coords) {
-    class Quadtree {
+    };
+    this.Quadtree = class Quadtree {
       constructor(dataset) {
         this.DATA = dataset;
         this.LeafThreshold = 4;
@@ -230,14 +200,30 @@ class Game {
         });
         return match;
       }
-    }
-    const point = [1, 1];
-    const myQuad = new Quadtree(coords);
-    log(`${point} : ${myQuad.search(point)}`);
+    };
+    this.Uint8 = class Uint8 extends Uint8Array {
+      constructor(arg) {
+        super(arg);
+        this.GET = (y, x) => this[y * h + x];
+      }
+    };
+    //run
+    this.init(LUT_SRC);
+  }
+  async init(LUT) {
+    await this.LUT_init(LUT);
+    this.COLORTREE = new this.Octree(this.LUT);
+  }
+  async LUT_init(LUT) {
+    const text = await (await fetch(LUT)).text();
+    const list = text.replace(/\r?\n/g, "//").split("//");
+    this.LUT = Array.from({ length: list.length }, (_, i) =>
+      list[i].split(" ").map((e) => Number(e))
+    );
   }
 }
 
-let myGame = new Game("/Xterm.txt");
+let myGame = new Game("/Xterm.txt", document.getElementById("canvas"));
 function log(arg) {
   document.getElementById("temp-display").textContent = arg;
 }
