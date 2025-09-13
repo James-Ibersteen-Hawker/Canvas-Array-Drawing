@@ -7,12 +7,23 @@ class Game {
     this.COLORTREE;
     this.CANVAS = CANVAS;
     this.CTX = this.CANVAS.getContext("2d");
-    //structures
     this.Octree = class Octree {
       constructor(dataset) {
         this.DATA = dataset;
         this.LeafThreshold = 4;
         this.TREE = this.make(this.DATA);
+        this.PREVIOUS = undefined;
+        this.xRange = [Infinity, -Infinity];
+        this.yRange = [Infinity, -Infinity];
+        this.zRange = [Infinity, -Infinity];
+        this.DATA.forEach(([x, y, z]) => {
+          this.xRange[0] = Math.min(this.xRange[0], x);
+          this.xRange[1] = Math.max(this.xRange[1], x);
+          this.yRange[0] = Math.min(this.yRange[0], y);
+          this.yRange[1] = Math.max(this.yRange[1], y);
+          this.zRange[0] = Math.min(this.zRange[0], z);
+          this.zRange[1] = Math.max(this.zRange[1], z);
+        });
       }
       make(set, [xR1, xR2, yR1, yR2, zR1, zR2] = new Array(6).fill(undefined)) {
         const self = this;
@@ -82,9 +93,12 @@ class Game {
         return Nodes;
       }
       search(point, set = this.TREE) {
+        let [x, y, z] = point;
+        x = Math.max(this.xRange[0], Math.min(this.xRange[1], x));
+        y = Math.max(this.yRange[0], Math.min(this.yRange[1], y));
+        z = Math.max(this.zRange[0], Math.min(this.zRange[1], z));
         for (let i = 0; i < set.length; i++) {
           const { xRange, yRange, zRange } = set[i];
-          const [x, y, z] = point;
           if (
             x >= xRange[0] &&
             x <= xRange[1] &&
@@ -93,12 +107,23 @@ class Game {
             z >= zRange[0] &&
             z <= zRange[1]
           ) {
-            if (!set[i].SUB) return this.closest(point, set[i].CLOUD);
-            else if (set[i].SUB) return this.search(point, set[i].SUB);
-          }
+            if (!set[i].SUB) return this.closest([x, y, z], set[i].CLOUD);
+            else if (set[i].SUB) {
+              this.PREVIOUS = set[i];
+              return this.search([x, y, z], set[i].SUB);
+            }
+          } else if (this.PREVIOUS)
+            return this.closest([x, y, z], this.PREVIOUS.CLOUD);
         }
+        const { xRange, yRange, zRange } = set[0];
+        x = Math.max(xRange[0], Math.min(xRange[1], x));
+        y = Math.max(yRange[0], Math.min(yRange[1], y));
+        z = Math.max(zRange[0], Math.min(zRange[1], z));
+        if (!set[0].SUB) return this.closest([x, y, z], set[0].CLOUD);
+        else return this.search([x, y, z], set[0].SUB);
       }
       closest(point, set) {
+        this.PREVIOUS = undefined;
         let match = set[0];
         let matchDist = null;
         const [iX, iY, iZ] = point;
@@ -120,61 +145,16 @@ class Game {
         this.DATA = dataset;
         this.LeafThreshold = 4;
         this.TREE = this.make(this.DATA);
-        this.FOUND = false;
+        this.PREVIOUS = null;
+        this.xRange = [Infinity, -Infinity];
+        this.yRange = [Infinity, -Infinity];
+        this.DATA.forEach(([x, y]) => {
+          this.xRange[0] = Math.min(this.xRange[0], x);
+          this.xRange[1] = Math.max(this.xRange[1], x);
+          this.yRange[0] = Math.min(this.yRange[0], y);
+          this.yRange[1] = Math.max(this.yRange[1], y);
+        });
       }
-      // make(dataset) {
-      //   if (!dataset || dataset.length <= 0 || !Array.isArray(dataset)) return;
-      //   const self = this;
-      //   let [mX, mY] = dataset[0];
-      //   let [mxX, mxY] = dataset[0];
-      //   dataset.forEach(([x, y]) => {
-      //     if (x < mX) mX = x;
-      //     else if (x > mxX) mxX = x;
-      //     if (y < mY) mY = y;
-      //     else if (y > mxY) mxY = y;
-      //   });
-      //   const dX = (mxX - mX) / 2 + mX;
-      //   const dY = (mxY - mY) / 2 + mY;
-      //   class Node {
-      //     constructor(xInit, xFinal, yInit, yFinal) {
-      //       this.CLOUD = [];
-      //       this.SUB = null;
-      //       this.xRange = [xInit, xFinal];
-      //       this.yRange = [yInit, yFinal];
-      //     }
-      //     divide() {
-      //       if (this.CLOUD.length <= self.LeafThreshold) return;
-      //       else this.SUB = self.make(this.CLOUD);
-      //     }
-      //   }
-      //   let Nodes = [
-      //     new Node(mX, dX, mY, dY),
-      //     new Node(dX + 0.001, mxX, mY, dY),
-      //     new Node(mX, dX, dY + 0.001, mxY),
-      //     new Node(dX + 0.001, mxX, dY + 0.001, mxY),
-      //   ];
-      //   dataset.forEach((e) => {
-      //     Nodeloop: for (let q = 0; q < Nodes.length; q++) {
-      //       const { xRange, yRange } = Nodes[q];
-      //       const [x, y] = e;
-      //       if (
-      //         x >= xRange[0] &&
-      //         x <= xRange[1] &&
-      //         y >= yRange[0] &&
-      //         y <= yRange[1]
-      //       ) {
-      //         Nodes[q].CLOUD.push(e);
-      //         break Nodeloop;
-      //       }
-      //     }
-      //   });
-      //   Nodes = Nodes.filter((e) => {
-      //     if (e.CLOUD.length <= 0) return false;
-      //     else e.divide();
-      //     return true;
-      //   });
-      //   return Nodes;
-      // }
       make(set, [xR1, xR2, yR1, yR2] = new Array(4).fill(undefined)) {
         const self = this;
         let [mX, mY, mxX, mxY] = [...set[0], ...set[0]];
@@ -198,7 +178,7 @@ class Game {
               get(target, property) {
                 if (property === "push") {
                   return function (...args) {
-                    if (args.every((e) => e.length === 3)) {
+                    if (args.every((e) => e.length === 2)) {
                       let [mX, mxX] = inSelf.xRange;
                       let [mY, mxY] = inSelf.yRange;
                       args.forEach(([x, y]) => {
@@ -219,7 +199,7 @@ class Game {
             this.SUB = self.make(this.CLOUD, [...this.xRange, ...this.yRange]);
           }
         }
-        let Nodes = new Array(8).fill(null).map(() => new Node());
+        let Nodes = new Array(4).fill(null).map(() => new Node());
         set.forEach(([x, y]) => {
           const index = (x > dX ? 1 : 0) | (y > dY ? 2 : 0);
           Nodes[index].CLOUD.push([x, y]);
@@ -233,21 +213,33 @@ class Game {
         return Nodes;
       }
       search(point, set = this.TREE) {
+        let [x, y] = point;
+        x = Math.max(this.xRange[0], Math.min(this.xRange[1], x));
+        y = Math.max(this.yRange[0], Math.min(this.yRange[1], y));
         for (let i = 0; i < set.length; i++) {
           const { xRange, yRange } = set[i];
-          const [x, y] = point;
           if (
             x >= xRange[0] &&
             x <= xRange[1] &&
             y >= yRange[0] &&
             y <= yRange[1]
           ) {
-            if (!set[i].SUB) return this.closest(point, set[i].CLOUD);
-            else if (set[i].SUB) return this.search(point, set[i].SUB);
-          }
+            if (!set[i].SUB) return this.closest([x, y], set[i].CLOUD);
+            else if (set[i].SUB) {
+              this.PREVIOUS = set[i];
+              return this.search([x, y], set[i].SUB);
+            }
+          } else if (this.PREVIOUS)
+            return this.closest([x, y], this.PREVIOUS.CLOUD);
         }
+        const { xRange, yRange } = set[0];
+        x = Math.max(xRange[0], Math.min(xRange[1], x));
+        y = Math.max(yRange[0], Math.min(yRange[1], y));
+        if (!set[0].SUB) return this.closest([x, y], set[0].CLOUD);
+        else return this.search([x, y], set[0].SUB);
       }
       closest(point, set) {
+        this.PREVIOUS = undefined;
         let match = set[0];
         let matchDist = null;
         const [iX, iY] = point;
@@ -268,19 +260,12 @@ class Game {
         this.GET = (y, x) => this[y * h + x];
       }
     };
-    //run
     this.init(LUT_SRC);
   }
   async init(LUT) {
     await this.LUT_init(LUT);
     this.COLORTREE = new this.Octree(this.LUT);
-    // log(this.COLORTREE.search([111, 111, 111]));
-    const myQuad = new this.Quadtree(
-      new Array.fill(null).map((_, i) => {
-        i, i + 1;
-      })
-    );
-    log(myQuad.search([0, 0]));
+    log(this.COLORTREE.search([50, 30, 10]));
   }
   async LUT_init(LUT) {
     const text = await (await fetch(LUT)).text();
