@@ -255,7 +255,7 @@ class Game {
       }
     };
     this.Uint8 = class Uint8 extends Uint8Array {
-      constructor(arg) {
+      constructor(arg, h) {
         super(arg);
         this.GET = (y, x) => this[y * h + x];
       }
@@ -265,7 +265,7 @@ class Game {
   async init(LUT) {
     await this.LUT_init(LUT);
     this.COLORTREE = new this.Octree(this.LUT);
-    log(this.COLORTREE.search([50, 30, 10]));
+    await this.imgProcess("/testImg.webp", 100, 50);
   }
   async LUT_init(LUT) {
     const text = await (await fetch(LUT)).text();
@@ -273,6 +273,20 @@ class Game {
     this.LUT = Array.from({ length: list.length }, (_, i) =>
       list[i].split(" ").map((e) => Number(e))
     );
+  }
+  async imgProcess(imgsrc, w, h) {
+    const image = new Image();
+    image.src = imgsrc;
+    const output = new this.Uint8(w * h, h);
+    const input = new Float32Array(w * h);
+    await new Promise((resolve) => (image.onload = resolve));
+    this.CTX.drawImage(image, 0, 0, w, h);
+    try {
+      const data = Array.from(this.CTX.getImageData(0, 0, w, h));
+      alert(data);
+    } catch (error) {
+      alert(error);
+    }
   }
 }
 
