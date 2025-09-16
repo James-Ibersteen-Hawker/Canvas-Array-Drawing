@@ -264,8 +264,19 @@ class Game {
   }
   async init(LUT) {
     await this.LUT_init(LUT);
+    this.CTX.imageSmoothingEnabled = false;
     this.COLORTREE = new this.Octree(this.LUT);
-    await this.imgProcess("/testImg.webp", 100, 50);
+    //test
+    const [w, h] = [100, 50];
+    const test = await this.imgCorrect("/testImg.webp", w, h);
+    this.CTX.clearRect(0, 0, w, h);
+    for (let i = 0; i < h; i++) {
+      for (let q = 0; q < w; q++) {
+        const color = this.LUT[test.GET(q, i)];
+        this.CTX.fillStyle = `rgb(${color.join(",")})`;
+        this.CTX.fillRect(q, i, 1, 1);
+      }
+    }
   }
   async LUT_init(LUT) {
     const text = await (await fetch(LUT)).text();
@@ -274,19 +285,32 @@ class Game {
       list[i].split(" ").map((e) => Number(e))
     );
   }
-  async imgProcess(imgsrc, w, h) {
+  async imgCorrect(imgsrc, w, h) {
     const image = new Image();
     image.src = imgsrc;
     const output = new this.Uint8(w * h, h);
-    const input = new Float32Array(w * h);
+    const input = new Uint32Array(w * h);
     await new Promise((resolve) => (image.onload = resolve));
     this.CTX.drawImage(image, 0, 0, w, h);
-    try {
-      const data = Array.from(this.CTX.getImageData(0, 0, w, h));
-      alert(data);
-    } catch (error) {
-      alert(error);
+    const data = this.CTX.getImageData(0, 0, w, h).data;
+    for (let i = 0, incr = 0; i < data.length; i += 4, incr++) {
+      const r = Number(data[i]);
+      const g = Number(data[i + 1]);
+      const b = Number(data[i + 2]);
+      const color = ((r << 16) | (g << 8) | b) >>> 0;
+      input[incr] = color;
     }
+    input.forEach((rgbNum, i) => {
+      const x = (rgbNum >> 16) & 0xff;
+      const y = (rgbNum >> 8) & 0xff;
+      const z = rgbNum & 0xff;
+      const result = this.COLORTREE.search([x, y, z]);
+      const XtermColor = this.LUT.findIndex(
+        (e) => e[0] === result[0] && e[1] === result[1] && e[2] === result[2]
+      );
+      output[i] = XtermColor;
+    });
+    return output;
   }
 }
 
