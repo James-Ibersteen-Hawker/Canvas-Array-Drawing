@@ -255,9 +255,9 @@ class Game {
       }
     };
     this.Uint8 = class Uint8 extends Uint8Array {
-      constructor(arg, h) {
+      constructor(arg, w) {
         super(arg);
-        this.GET = (y, x) => this[y * h + x];
+        this.GET = (y, x) => this[y * w + x];
       }
     };
     this.init(LUT_SRC);
@@ -270,13 +270,27 @@ class Game {
     const [w, h] = [100, 50];
     const test = await this.imgCorrect("/testImg.webp", w, h);
     this.CTX.clearRect(0, 0, w, h);
-    for (let i = 0; i < h; i++) {
-      for (let q = 0; q < w; q++) {
-        const color = this.LUT[test.GET(q, i)];
-        this.CTX.fillStyle = `rgb(${color.join(",")})`;
-        this.CTX.fillRect(q, i, 1, 1);
-      }
+    // for (let i = 0; i < h; i++) {
+    //   for (let q = 0; q < w; q++) {
+    //     const color = this.LUT[test.GET(q, i)];
+    //     this.CTX.fillStyle = `rgb(${color.join(",")})`;
+    //     this.CTX.fillRect(q, i, 1, 1);
+    //   }
+    // } fix this!!
+    for (let i = 0; i < test.length; i++) {
+      const x = i % w;
+      const y = Math.floor(i / w);
+
+      const colorIndex = test[i]; // value from your Uint8Array
+      const colorRGB = this.LUT[colorIndex]; // LUT[colorIndex] = [r,g,b]
+
+      this.CTX.fillStyle = `rgb(${colorRGB.join(",")})`;
+      this.CTX.fillRect(x, y, 1, 1); // draw 1x1 pixel
     }
+    const image = new Image();
+    image.src = "/testImg.webp";
+    await new Promise((resolve) => (image.onload = resolve));
+    this.CTX.drawImage(image, w, 0, w, h);
   }
   async LUT_init(LUT) {
     const text = await (await fetch(LUT)).text();
@@ -288,7 +302,7 @@ class Game {
   async imgCorrect(imgsrc, w, h) {
     const image = new Image();
     image.src = imgsrc;
-    const output = new this.Uint8(w * h, h);
+    const output = new this.Uint8(w * h, w);
     const input = new Uint32Array(w * h);
     await new Promise((resolve) => (image.onload = resolve));
     this.CTX.drawImage(image, 0, 0, w, h);
