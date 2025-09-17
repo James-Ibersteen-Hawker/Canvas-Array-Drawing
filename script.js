@@ -3,10 +3,9 @@ class Game {
   LUT_SRC;
   CANVAS;
   constructor(LUT_SRC, CANVAS) {
-    this.LUT = [];
     this.COLORTREE;
-    this.CANVAS = CANVAS;
-    this.CTX = this.CANVAS.getContext("2d");
+    (this.LUT = []), (this.LUT_LUT = new Map());
+    (this.CANVAS = CANVAS), (this.CTX = this.CANVAS.getContext("2d"));
     this.Octree = class Octree {
       constructor(dataset) {
         this.DATA = dataset;
@@ -268,28 +267,17 @@ class Game {
     this.COLORTREE = new this.Octree(this.LUT);
     //test
     const [w, h] = [150, 75];
-    // const test = await this.imgCorrect("/testImg.webp", w, h);
-    const test = await this.imgCorrect("/testGrad.png", w, h);
+    const test = await this.imgCorrect("/testImg.webp", w, h);
     this.CTX.clearRect(0, 0, w, h);
-    // for (let i = 0; i < h; i++) {
-    //   for (let q = 0; q < w; q++) {
-    //     const color = this.LUT[test.GET(q, i)];
-    //     this.CTX.fillStyle = `rgb(${color.join(",")})`;
-    //     this.CTX.fillRect(q, i, 1, 1);
-    //   }
-    // } fix this!!
     for (let i = 0; i < test.length; i++) {
-      const x = i % w;
-      const y = Math.floor(i / w);
-
-      const colorIndex = test[i]; // value from your Uint8Array
-      const colorRGB = this.LUT[colorIndex]; // LUT[colorIndex] = [r,g,b]
-
-      this.CTX.fillStyle = `rgb(${colorRGB.join(",")})`;
-      this.CTX.fillRect(x, y, 1, 1); // draw 1x1 pixel
+      const [x, y] = [i % w, Math.floor(i / w)];
+      const index = test[i];
+      const color = this.LUT[index];
+      this.CTX.fillStyle = `rgb(${color.join(",")})`;
+      this.CTX.fillRect(x, y, 1, 1);
     }
     const image = new Image();
-    image.src = "/testGrad.png";
+    image.src = "/testImg.webp";
     await new Promise((resolve) => (image.onload = resolve));
     this.CTX.drawImage(image, w, 0, w, h);
   }
