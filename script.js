@@ -267,8 +267,9 @@ class Game {
     this.CTX.imageSmoothingEnabled = false;
     this.COLORTREE = new this.Octree(this.LUT);
     //test
-    const [w, h] = [100, 50];
-    const test = await this.imgCorrect("/testImg.webp", w, h);
+    const [w, h] = [150, 75];
+    // const test = await this.imgCorrect("/testImg.webp", w, h);
+    const test = await this.imgCorrect("/testGrad.png", w, h);
     this.CTX.clearRect(0, 0, w, h);
     // for (let i = 0; i < h; i++) {
     //   for (let q = 0; q < w; q++) {
@@ -288,7 +289,7 @@ class Game {
       this.CTX.fillRect(x, y, 1, 1); // draw 1x1 pixel
     }
     const image = new Image();
-    image.src = "/testImg.webp";
+    image.src = "/testGrad.png";
     await new Promise((resolve) => (image.onload = resolve));
     this.CTX.drawImage(image, w, 0, w, h);
   }
@@ -328,7 +329,11 @@ class Game {
   }
 }
 
-let myGame = new Game("/Xterm.txt", document.getElementById("canvas"));
+// let myGame = new Game("/Xterm.txt", document.getElementById("canvas"));
+let myGame = new Game(
+  "/glasbey_bw_filtered.txt",
+  document.getElementById("canvas")
+);
 function log(arg) {
   document.getElementById("temp-display").textContent = arg;
 }
