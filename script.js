@@ -267,7 +267,7 @@ class Game {
     this.COLORTREE = new this.Octree(this.LUT);
     //test
     const [w, h] = [150, 75];
-    const test = await this.imgCorrect("/testImg.webp", w, h);
+    const test = await this.imgCorrect("/testSprite.png", w, h);
     this.CTX.clearRect(0, 0, w, h);
     for (let i = 0; i < test.length; i++) {
       const [x, y] = [i % w, Math.floor(i / w)];
@@ -277,7 +277,7 @@ class Game {
       this.CTX.fillRect(x, y, 1, 1);
     }
     const image = new Image();
-    image.src = "/testImg.webp";
+    image.src = "/testSprite.png";
     await new Promise((resolve) => (image.onload = resolve));
     this.CTX.drawImage(image, w, 0, w, h);
   }
