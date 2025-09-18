@@ -267,7 +267,7 @@ class Game {
     this.COLORTREE = new this.Octree(this.LUT);
     //test
     const [w, h] = [150, 75];
-    const test = await this.imgCorrect("/testSprite.png", w, h);
+    const test = await this.imgCorrect("/testSprite4.png", w, h);
     this.CTX.clearRect(0, 0, w, h);
     for (let i = 0; i < test.length; i++) {
       const [x, y] = [i % w, Math.floor(i / w)];
@@ -277,7 +277,7 @@ class Game {
       this.CTX.fillRect(x, y, 1, 1);
     }
     const image = new Image();
-    image.src = "/testSprite.png";
+    image.src = "/testSprite4.png";
     await new Promise((resolve) => (image.onload = resolve));
     this.CTX.drawImage(image, w, 0, w, h);
   }
@@ -297,9 +297,10 @@ class Game {
     this.CTX.drawImage(image, 0, 0, w, h);
     const data = this.CTX.getImageData(0, 0, w, h).data;
     for (let i = 0, incr = 0; i < data.length; i += 4, incr++) {
-      const r = Number(data[i]);
-      const g = Number(data[i + 1]);
-      const b = Number(data[i + 2]);
+      let r = Number(data[i]);
+      let g = Number(data[i + 1]);
+      let b = Number(data[i + 2]);
+      if (Number(data[i + 3]) === 0) [r, g, b] = [200, 200, 200];
       const color = ((r << 16) | (g << 8) | b) >>> 0;
       input[incr] = color;
     }
