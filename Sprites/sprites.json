@@ -1,0 +1,22 @@
+{
+  "sprites": ["TMNT-R"],
+  "leftArm": [
+    {
+      "name": "punch",
+      "count": 8
+    },
+    {
+      "name": "throw",
+      "count": 10
+    }
+  ],
+  "rightArm": [
+    {
+      "name": "punch",
+      "count": 8
+    }
+  ],
+  "head": true,
+  "body": true,
+  "legs": true
+}

@@ -1,12 +1,14 @@
-"use strict";
 class Game {
   LUT_SRC;
   CANVAS;
   constructor(LUT_SRC, CANVAS) {
     this.COLORTREE;
-    (this.LUT = []), (this.LUT_LUT = new Map());
+    this.sprites = [];
+    this.config = null;
+    this.LUT = [];
+    this.LUT_LUT = new Map();
     (this.CANVAS = CANVAS), (this.CTX = this.CANVAS.getContext("2d"));
-    this.Octree = class Octree {
+    this.Octree = class {
       constructor(dataset) {
         this.DATA = dataset;
         this.LeafThreshold = 4;
@@ -139,7 +141,7 @@ class Game {
         return match;
       }
     };
-    this.Quadtree = class Quadtree {
+    this.Quadtree = class {
       constructor(dataset) {
         this.DATA = dataset;
         this.LeafThreshold = 4;
@@ -253,10 +255,35 @@ class Game {
         return match;
       }
     };
-    this.Uint8 = class Uint8 extends Uint8Array {
+    this.Uint8 = class extends Uint8Array {
       constructor(arg, w) {
         super(arg);
         this.GET = (y, x) => this[y * w + x];
+      }
+    };
+    this.Sprite = class {
+      constructor(name, x, y) {
+        this.name = name;
+        this.x = x;
+        this.y = y;
+        this.anchors = {};
+        this.costumes = {
+          leftArm: {
+            anchor: [,],
+          },
+          rightArm: {
+            anchor: [,],
+          },
+          body: {
+            anchor: [,],
+          },
+          head: {
+            anchor: [,],
+          },
+          legs: {
+            anchor: [,],
+          },
+        };
       }
     };
     this.init(LUT_SRC);
@@ -265,21 +292,21 @@ class Game {
     await this.LUT_init(LUT);
     this.CTX.imageSmoothingEnabled = false;
     this.COLORTREE = new this.Octree(this.LUT);
-    //test
-    const [w, h] = [150, 75];
-    const test = await this.imgCorrect("/testSprite4.png", w, h);
-    this.CTX.clearRect(0, 0, w, h);
-    for (let i = 0; i < test.length; i++) {
-      const [x, y] = [i % w, Math.floor(i / w)];
-      const index = test[i];
-      const color = this.LUT[index];
-      this.CTX.fillStyle = `rgb(${color.join(",")})`;
-      this.CTX.fillRect(x, y, 1, 1);
-    }
-    const image = new Image();
-    image.src = "/testSprite4.png";
-    await new Promise((resolve) => (image.onload = resolve));
-    this.CTX.drawImage(image, w, 0, w, h);
+    // const [w, h] = [150, 75];
+    this.SpritesInit();
+    // const test = await this.imgCorrect("/TMNT-R/arms/left/punch1.png", w, h);
+    // this.CTX.clearRect(0, 0, w, h);
+    // for (let i = 0; i < test.length; i++) {
+    //   const [x, y] = [i % w, Math.floor(i / w)];
+    //   const index = test[i];
+    //   const color = this.LUT[index];
+    //   this.CTX.fillStyle = `rgb(${color.join(",")})`;
+    //   this.CTX.fillRect(x, y, 1, 1);
+    // }
+    // const image = new Image();
+    // image.src = "/TMNT-R/arms/left/punch1.png";
+    // await new Promise((resolve) => (image.onload = resolve));
+    // this.CTX.drawImage(image, w, 0, w, h);
   }
   async LUT_init(LUT) {
     const text = await (await fetch(LUT)).text();
@@ -316,13 +343,21 @@ class Game {
     });
     return output;
   }
-}
-
-// let myGame = new Game("/Xterm.txt", document.getElementById("canvas"));
-let myGame = new Game(
-  "/glasbey_bw_filtered.txt",
-  document.getElementById("canvas")
-);
-function log(arg) {
-  document.getElementById("temp-display").textContent = arg;
+  async SpritesInit() {
+    this.config = await (await fetch("/Sprites/sprites.json")).text();
+    this.config = JSON.parse(this.config);
+    const config = this.config;
+    config.sprites.forEach((e) => {
+      const Sprite = new this.Sprite(e, 0, 0);
+      this.sprites.push(Sprite);
+      config.leftArm.forEach(({ name: n, count: c }) => {
+        const frames = [];
+        for (let i = 1; i <= c; i++)
+          frames.push(`Sprites/${e}/leftArm/${n}${i}.png`);
+        alert(frames);
+        Sprite.costumes.leftArm[n] = frames;
+      });
+      config.rightArm.forEach((p) => (Sprite.costumes.rightArm[p.name] = []));
+    });
+  }
 }
