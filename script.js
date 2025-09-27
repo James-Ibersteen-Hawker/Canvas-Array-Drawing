@@ -315,49 +315,61 @@ class Game {
       list[i].split(" ").map((e) => Number(e))
     );
   }
-  async imgCorrect(imgsrc, w, h) {
+  async imgCorrect(imgsrc) {
     const image = new Image();
     image.src = imgsrc;
+    await new Promise((resolve) => (image.onload = resolve));
+    const w = image.width;
+    const h = image.height;
     const output = new this.Uint8(w * h, w);
     const input = new Uint32Array(w * h);
-    await new Promise((resolve) => (image.onload = resolve));
     this.CTX.drawImage(image, 0, 0, w, h);
     const data = this.CTX.getImageData(0, 0, w, h).data;
+    const alphaIndexes = new Set();
     for (let i = 0, incr = 0; i < data.length; i += 4, incr++) {
       let r = Number(data[i]);
       let g = Number(data[i + 1]);
       let b = Number(data[i + 2]);
-      if (Number(data[i + 3]) === 0) [r, g, b] = [200, 200, 200];
+      if (Number(data[i + 3]) < 255) {
+        [r, g, b] = [0, 0, 0];
+        alphaIndexes.add(incr);
+      }
       const color = ((r << 16) | (g << 8) | b) >>> 0;
       input[incr] = color;
     }
     input.forEach((rgbNum, i) => {
-      const x = (rgbNum >> 16) & 0xff;
-      const y = (rgbNum >> 8) & 0xff;
-      const z = rgbNum & 0xff;
-      const result = this.COLORTREE.search([x, y, z]);
-      const XtermColor = this.LUT.findIndex(
-        (e) => e[0] === result[0] && e[1] === result[1] && e[2] === result[2]
-      );
-      output[i] = XtermColor;
+      if (!alphaIndexes.has(i)) {
+        const x = (rgbNum >> 16) & 0xff;
+        const y = (rgbNum >> 8) & 0xff;
+        const z = rgbNum & 0xff;
+        const result = this.COLORTREE.search([x, y, z]);
+        const XtermColor = this.LUT.findIndex(
+          (e) => e[0] === result[0] && e[1] === result[1] && e[2] === result[2]
+        );
+        output[i] = XtermColor;
+      } else {
+      }
     });
+    this.CTX.clearRect(0, 0, w, h);
     return output;
   }
   async SpritesInit() {
     this.config = await (await fetch("/Sprites/sprites.json")).text();
     this.config = JSON.parse(this.config);
     const config = this.config;
-    config.sprites.forEach((e) => {
+    for (let e of config.sprites) {
       const Sprite = new this.Sprite(e, 0, 0);
-      this.sprites.push(Sprite);
-      config.leftArm.forEach(({ name: n, count: c }) => {
+      for (let { name: n, count: c } of config.leftArm) {
         const frames = [];
-        for (let i = 1; i <= c; i++)
+        for (let i = 1; i <= c; i++) {
           frames.push(`Sprites/${e}/leftArm/${n}${i}.png`);
-        alert(frames);
-        Sprite.costumes.leftArm[n] = frames;
-      });
-      config.rightArm.forEach((p) => (Sprite.costumes.rightArm[p.name] = []));
-    });
+        }
+        Sprite.costumes.leftArm[n] = await Promise.all(
+          frames.map((e) => this.imgCorrect(e))
+        );
+      }
+      this.sprites.push(Sprite);
+    }
+    alert(this.sprites[0].costumes.leftArm.punch[2]);
   }
 }
