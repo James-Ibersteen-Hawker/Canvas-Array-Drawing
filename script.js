@@ -296,7 +296,7 @@ class Game {
     await this.LUT_init(LUT);
     this.CTX.imageSmoothingEnabled = false;
     this.COLORTREE = new this.Octree(this.LUT);
-    this.SpritesInit();
+    await this.SpritesInit();
   }
   async LUT_init(LUT) {
     const text = await (await fetch(LUT)).text();
@@ -358,8 +358,16 @@ class Game {
           frames.map((e) => this.imgCorrect(e))
         );
       }
+      for (let { name: n, count: c } of config.rightArm) {
+        const frames = [];
+        for (let i = 1; i <= c; i++) {
+          frames.push(`Sprites/${e}/rightArm/${n}${i}.png`);
+        }
+        Sprite.costumes.rightArm[n] = await Promise.all(
+          frames.map((e) => this.imgCorrect(e))
+        );
+      }
       this.sprites.push(Sprite);
     }
-    alert(this.sprites[0].costumes.leftArm.punch[2]);
   }
 }
