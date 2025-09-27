@@ -4,6 +4,7 @@ class Game {
   constructor(LUT_SRC, CANVAS) {
     this.COLORTREE;
     this.sprites = [];
+    this.alpha = [];
     this.config = null;
     this.LUT = [];
     this.LUT_LUT = new Map();
@@ -289,24 +290,13 @@ class Game {
     this.init(LUT_SRC);
   }
   async init(LUT) {
+    this.config = await (await fetch("/Sprites/sprites.json")).text();
+    this.config = JSON.parse(this.config);
+    this.alpha = this.config.alpha;
     await this.LUT_init(LUT);
     this.CTX.imageSmoothingEnabled = false;
     this.COLORTREE = new this.Octree(this.LUT);
-    // const [w, h] = [150, 75];
     this.SpritesInit();
-    // const test = await this.imgCorrect("/TMNT-R/arms/left/punch1.png", w, h);
-    // this.CTX.clearRect(0, 0, w, h);
-    // for (let i = 0; i < test.length; i++) {
-    //   const [x, y] = [i % w, Math.floor(i / w)];
-    //   const index = test[i];
-    //   const color = this.LUT[index];
-    //   this.CTX.fillStyle = `rgb(${color.join(",")})`;
-    //   this.CTX.fillRect(x, y, 1, 1);
-    // }
-    // const image = new Image();
-    // image.src = "/TMNT-R/arms/left/punch1.png";
-    // await new Promise((resolve) => (image.onload = resolve));
-    // this.CTX.drawImage(image, w, 0, w, h);
   }
   async LUT_init(LUT) {
     const text = await (await fetch(LUT)).text();
@@ -330,10 +320,7 @@ class Game {
       let r = Number(data[i]);
       let g = Number(data[i + 1]);
       let b = Number(data[i + 2]);
-      if (Number(data[i + 3]) < 255) {
-        [r, g, b] = [0, 0, 0];
-        alphaIndexes.add(incr);
-      }
+      if (Number(data[i + 3]) < 255) alphaIndexes.add(incr);
       const color = ((r << 16) | (g << 8) | b) >>> 0;
       input[incr] = color;
     }
@@ -343,19 +330,22 @@ class Game {
         const y = (rgbNum >> 8) & 0xff;
         const z = rgbNum & 0xff;
         const result = this.COLORTREE.search([x, y, z]);
-        const XtermColor = this.LUT.findIndex(
+        const color = this.LUT.findIndex(
           (e) => e[0] === result[0] && e[1] === result[1] && e[2] === result[2]
         );
-        output[i] = XtermColor;
+        output[i] = color;
       } else {
+        const result = this.alpha;
+        const color = this.LUT.findIndex(
+          (e) => e[0] === result[0] && e[1] === result[1] && e[2] === result[2]
+        );
+        output[i] = color;
       }
     });
     this.CTX.clearRect(0, 0, w, h);
     return output;
   }
   async SpritesInit() {
-    this.config = await (await fetch("/Sprites/sprites.json")).text();
-    this.config = JSON.parse(this.config);
     const config = this.config;
     for (let e of config.sprites) {
       const Sprite = new this.Sprite(e, 0, 0);
