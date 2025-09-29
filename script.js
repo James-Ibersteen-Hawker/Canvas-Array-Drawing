@@ -360,7 +360,7 @@ class Game {
       }
       for (let { name: n, count: c } of config.rightArm) {
         const frames = [];
-        for (let i = 1; i <= c; i++) {
+        for (let i = 0; i < c; i++) {
           frames.push(`Sprites/${e}/rightArm/${n}${i}.png`);
         }
         Sprite.costumes.rightArm[n] = await Promise.all(
