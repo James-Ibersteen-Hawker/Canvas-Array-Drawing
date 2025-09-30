@@ -347,27 +347,18 @@ class Game {
   }
   async SpritesInit() {
     const config = this.config;
-    for (let e of config.sprites) {
-      const Sprite = new this.Sprite(e, 0, 0);
-      for (let { name: n, count: c } of config.leftArm) {
-        const frames = [];
-        for (let i = 1; i <= c; i++) {
-          frames.push(`Sprites/${e}/leftArm/${n}${i}.png`);
+    for (let SPRT of config.sprites) {
+      const Sprite = new this.Sprite(SPRT.name, 0, 0);
+      for (let part of SPRT.parts) {
+        for (let { name: n, count: c, anchor: a } of part.costumes) {
+          const frames = Array.from(
+            { length: c },
+            (_, i) => `Sprites/${SPRT.name}/${part.name}/${n}${i}.png`
+          );
+          alert(frames);
         }
-        Sprite.costumes.leftArm[n] = await Promise.all(
-          frames.map((e) => this.imgCorrect(e))
-        );
       }
-      for (let { name: n, count: c } of config.rightArm) {
-        const frames = [];
-        for (let i = 0; i < c; i++) {
-          frames.push(`Sprites/${e}/rightArm/${n}${i}.png`);
-        }
-        Sprite.costumes.rightArm[n] = await Promise.all(
-          frames.map((e) => this.imgCorrect(e))
-        );
-      }
-      this.sprites.push(Sprite);
     }
   }
+  async findAnchor(color, arr, w, h) {}
 }
