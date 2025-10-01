@@ -343,7 +343,7 @@ class Game {
       }
     });
     this.CTX.clearRect(0, 0, w, h);
-    return output;
+    return [output, w, h];
   }
   async SpritesInit() {
     const config = this.config;
@@ -355,9 +355,16 @@ class Game {
             { length: c },
             (_, i) => `Sprites/${SPRT.name}/${part.name}/${n}${i}.png`
           );
+          const widths = new Set();
+          const heights = new Set();
           Sprite.costumes[part.name][n] = await Promise.all(
-            frames.map((frame) => this.imgCorrect(frame))
+            frames.map(async (frame) => {
+              const [output, w, h] = await this.imgCorrect(frame);
+              widths.add(w), heights.add(h);
+              return output;
+            })
           );
+          alert(widths);
         }
       }
     }
