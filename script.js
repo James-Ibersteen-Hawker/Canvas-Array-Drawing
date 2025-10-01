@@ -346,9 +346,10 @@ class Game {
     return [output, w, h];
   }
   async SpritesInit() {
+    const self = this;
     const config = this.config;
     for (let SPRT of config.sprites) {
-      const Sprite = new this.Sprite(SPRT.name, 0, 0);
+      const Sprite = new self.Sprite(SPRT.name, 0, 0);
       for (let part of SPRT.parts) {
         for (let { name: n, count: c, anchor: a } of part.costumes) {
           const frames = Array.from(
@@ -359,12 +360,16 @@ class Game {
           const heights = new Set();
           Sprite.costumes[part.name][n] = await Promise.all(
             frames.map(async (frame) => {
-              const [output, w, h] = await this.imgCorrect(frame);
+              const [output, w, h] = await self.imgCorrect(frame);
               widths.add(w), heights.add(h);
               return output;
             })
           );
-          alert(widths);
+          if (widths.size > 1 || heights.size > 1) {
+            throw new Error(
+              `Nonuniformly scaled frames for Sprites/${SPRT.name}/${part.name}/${n}`
+            );
+          }
         }
       }
     }
