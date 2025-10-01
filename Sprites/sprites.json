@@ -5,11 +5,23 @@
       "parts": [
         {
           "name": "leftArm",
+          "sub": true,
           "costumes": [
             {
               "name": "punch",
               "count": 8,
               "anchor": [223, 87, 255]
+            }
+          ]
+        },
+        {
+          "name": "body",
+          "sub": "false",
+          "costumes": [
+            {
+              "name": "test",
+              "count": 1,
+              "anchor": [223,87,255]
             }
           ]
         }

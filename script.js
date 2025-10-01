@@ -369,9 +369,10 @@ class Game {
               .split("_")
               .map((e) => Number(e)),
           };
-          alert(Sprite.costumes[part.name][n].anchor);
         }
       }
+      self.sprites.push(Sprite);
+      console.log(Sprite);
     }
   }
   findAnchor(color, arr, w) {
