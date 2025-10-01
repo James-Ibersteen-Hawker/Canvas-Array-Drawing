@@ -268,23 +268,7 @@ class Game {
         this.x = x;
         this.y = y;
         this.anchors = {};
-        this.costumes = {
-          leftArm: {
-            anchor: [,],
-          },
-          rightArm: {
-            anchor: [,],
-          },
-          body: {
-            anchor: [,],
-          },
-          head: {
-            anchor: [,],
-          },
-          legs: {
-            anchor: [,],
-          },
-        };
+        this.costumes = {};
       }
     };
     this.init(LUT_SRC);
@@ -351,6 +335,7 @@ class Game {
       const Sprite = new self.Sprite(SPRT.name, 0, 0);
       for (const part of SPRT.parts) {
         for (const { name: n, count: c, anchor: a } of part.costumes) {
+          Sprite.costumes[part.name] = {};
           const frames = Array.from(
             { length: c },
             (_, i) => `Sprites/${SPRT.name}/${part.name}/${n}${i}.png`
@@ -368,23 +353,34 @@ class Game {
               `Nonuniformly scaled frames for Sprites/${SPRT.name}/${part.name}/${n}`
             );
           }
-          const w = widths.values().next().value;
-          const h = heights.values().next().value;
+          const [w] = widths;
           const foundAnchors = new Set();
           framesCorrected.forEach((e) => {
-            foundAnchors.add(self.findAnchor(a, e, w, h));
+            foundAnchors.add(self.findAnchor(a, e, w));
           });
           if (foundAnchors.size > 1) {
             throw new Error(
               `Only one anchor permissible across Sprites/${SPRT.name}/${part.name}/${n}.png`
             );
           }
-          Sprite.costumes[part.name][n] = framesCorrected;
+          Sprite.costumes[part.name][n] = {
+            frames: framesCorrected,
+            anchor: Array.from(foundAnchors)[0]
+              .split("_")
+              .map((e) => Number(e)),
+          };
+          alert(Sprite.costumes[part.name][n].anchor);
         }
       }
     }
   }
-  async findAnchor(color, arr, w, h) {
-    alert([w, h]);
+  findAnchor(color, arr, w) {
+    for (let i = 0; i < arr.length; i++) {
+      const [x, y] = [i % w, Math.floor(i / w)];
+      const matchkey = this.LUT.findIndex(
+        (e) => e[0] === color[0] && e[1] === color[1] && e[2] === color[2]
+      );
+      if (arr[i] === matchkey) return `${x}_${y}`;
+    }
   }
 }
