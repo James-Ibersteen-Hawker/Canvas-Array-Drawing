@@ -355,7 +355,9 @@ class Game {
             { length: c },
             (_, i) => `Sprites/${SPRT.name}/${part.name}/${n}${i}.png`
           );
-          alert(frames);
+          Sprite.costumes[part.name][n] = await Promise.all(
+            frames.map((frame) => this.imgCorrect(frame))
+          );
         }
       }
     }
