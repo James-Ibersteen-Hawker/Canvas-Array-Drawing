@@ -346,19 +346,17 @@ class Game {
     return [output, w, h];
   }
   async SpritesInit() {
-    const self = this;
-    const config = this.config;
+    const [self, config] = [this, this.config];
     for (let SPRT of config.sprites) {
       const Sprite = new self.Sprite(SPRT.name, 0, 0);
-      for (let part of SPRT.parts) {
-        for (let { name: n, count: c, anchor: a } of part.costumes) {
+      for (const part of SPRT.parts) {
+        for (const { name: n, count: c, anchor: a } of part.costumes) {
           const frames = Array.from(
             { length: c },
             (_, i) => `Sprites/${SPRT.name}/${part.name}/${n}${i}.png`
           );
-          const widths = new Set();
-          const heights = new Set();
-          Sprite.costumes[part.name][n] = await Promise.all(
+          const [widths, heights] = [new Set(), new Set()];
+          const framesCorrected = await Promise.all(
             frames.map(async (frame) => {
               const [output, w, h] = await self.imgCorrect(frame);
               widths.add(w), heights.add(h);
@@ -370,9 +368,23 @@ class Game {
               `Nonuniformly scaled frames for Sprites/${SPRT.name}/${part.name}/${n}`
             );
           }
+          const w = widths.values().next().value;
+          const h = heights.values().next().value;
+          const foundAnchors = new Set();
+          framesCorrected.forEach((e) => {
+            foundAnchors.add(self.findAnchor(a, e, w, h));
+          });
+          if (foundAnchors.size > 1) {
+            throw new Error(
+              `Only one anchor permissible across Sprites/${SPRT.name}/${part.name}/${n}.png`
+            );
+          }
+          Sprite.costumes[part.name][n] = framesCorrected;
         }
       }
     }
   }
-  async findAnchor(color, arr, w, h) {}
+  async findAnchor(color, arr, w, h) {
+    alert([w, h]);
+  }
 }
