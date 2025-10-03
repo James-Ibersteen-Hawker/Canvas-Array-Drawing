@@ -2,30 +2,41 @@
   "sprites": [
     {
       "name": "TMNT-R",
-      "parts": [
-        {
-          "name": "leftArm",
-          "sub": true,
-          "costumes": [
-            {
-              "name": "punch",
-              "count": 8,
-              "anchor": [223, 87, 255]
-            }
-          ]
-        },
-        {
-          "name": "body",
-          "sub": "false",
-          "costumes": [
-            {
-              "name": "test",
-              "count": 1,
-              "anchor": [223,87,255]
-            }
-          ]
-        }
-      ]
+      "tree": {
+        "name": "body",
+        "costumes": [
+          {
+            "name": "test",
+            "count": 1,
+            "anchors": [[223, 87, 255]]
+          }
+        ],
+        "sub": true,
+        "subHeld": [
+          {
+            "name": "leftArm",
+            "sub": false,
+            "costumes": [
+              {
+                "name": "punch",
+                "count": 8,
+                "anchors": [[223, 87, 255]]
+              }
+            ]
+          },
+          {
+            "name": "rightArm",
+            "sub": false,
+            "costumes": [
+              {
+                "name": "punch",
+                "count": 8,
+                "anchors": [[31, 31, 31]]
+              }
+            ]
+          }
+        ]
+      }
     }
   ],
   "alpha": [0, 0, 219]
