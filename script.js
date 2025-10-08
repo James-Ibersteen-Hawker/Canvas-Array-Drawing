@@ -267,7 +267,6 @@ class Game {
         this.name = name;
         this.x = x;
         this.y = y;
-        this.anchors = {};
         this.costumes = {};
       }
     };
@@ -339,7 +338,14 @@ class Game {
             { length: c },
             (_, i) => `Sprites/${name}/${partName}/${costumeName}${i}.png`
           );
-          alert(frames);
+          console.log(a);
+          const fixedFrames = await Promise.all(
+            frames.map(async (e) => {
+              const [result, w, _] = await self.imgCorrect(e);
+              const output = self.findAnchor(a[0], result, w);
+              console.log(output, e);
+            })
+          );
         }
       }
     }
@@ -352,5 +358,6 @@ class Game {
       );
       if (arr[i] === matchkey) return `${x}_${y}`;
     }
+    console.log("not found");
   }
 }
