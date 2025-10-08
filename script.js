@@ -338,26 +338,22 @@ class Game {
             { length: c },
             (_, i) => `Sprites/${name}/${partName}/${costumeName}${i}.png`
           );
-          console.log(a);
           const fixedFrames = await Promise.all(
             frames.map(async (e) => {
-              const [result, w, _] = await self.imgCorrect(e);
-              const output = self.findAnchor(a[0], result, w);
-              console.log(output, e);
+              const [result, w, h] = await self.imgCorrect(e);
+              const output = self.findAnchor(a, result, w);
+              return {
+                pxls: result,
+                anchors: output,
+              };
             })
           );
+          console.log(fixedFrames);
         }
       }
     }
   }
-  findAnchor(color, arr, w) {
-    for (let i = 0; i < arr.length; i++) {
-      const [x, y] = [i % w, Math.floor(i / w)];
-      const matchkey = this.LUT.findIndex(
-        (e) => e[0] === color[0] && e[1] === color[1] && e[2] === color[2]
-      );
-      if (arr[i] === matchkey) return `${x}_${y}`;
-    }
-    console.log("not found");
+  findAnchor(colors, arr, w) {
+    return new Map(colors.map((e) => [e, "2_3"])); //xy or yx? currently xy placeholder
   }
 }
