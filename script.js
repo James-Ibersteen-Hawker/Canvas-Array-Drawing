@@ -342,18 +342,27 @@ class Game {
             frames.map(async (e) => {
               const [result, w, h] = await self.imgCorrect(e);
               const output = self.findAnchor(a, result, w);
-              return {
-                pxls: result,
-                anchors: output,
-              };
+              return { pxls: result, anchors: output, w };
             })
           );
-          console.log(fixedFrames);
+          fixedFrames.forEach(({ pxls, w, anchor }) => {
+            for (let i = 0; i < pxls.length; i++) {
+              const y = Math.floor(i / w);
+              const x = i % w;
+              this.CTX.fillStyle = this.LUT[pxls[i]];
+              console.log(this.LUT[pxls[i]]);
+              if (this.LUT[pxls[i]].join("-") === this.alpha.join("-"))
+                continue;
+              this.CTX.fillRect(x, y, 1, 1);
+              this.CTX.stroke();
+            }
+          });
+          console.log(partName, fixedFrames);
         }
       }
     }
   }
   findAnchor(colors, arr, w) {
-    return new Map(colors.map((e) => [e, "2_3"])); //xy or yx? currently xy placeholder
+    return colors.map((e) => [e, "2_3"]); //xy or yx? currently xy placeholder
   }
 }
