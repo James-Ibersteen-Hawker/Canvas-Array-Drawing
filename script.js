@@ -349,7 +349,7 @@ class Game {
             for (let i = 0; i < pxls.length; i++) {
               const y = Math.floor(i / w);
               const x = i % w;
-              this.CTX.fillStyle = this.LUT[pxls[i]];
+              this.CTX.fillStyle = `rgb(${this.LUT[pxls[i]].join(",")})`;
               console.log(this.LUT[pxls[i]]);
               if (this.LUT[pxls[i]].join("-") === this.alpha.join("-"))
                 continue;
