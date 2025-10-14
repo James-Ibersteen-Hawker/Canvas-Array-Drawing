@@ -129,6 +129,8 @@ class Game {
         let match = set[0];
         let matchDist = null;
         const [iX, iY, iZ] = point;
+        if (set.some(([x, y, z]) => x === iX && y === iY && z === iZ))
+          return point;
         set.forEach(([x, y, z]) => {
           const distance = Math.sqrt(
             Math.pow(x - iX, 2) + Math.pow(y - iY, 2) + Math.pow(z - iZ, 2)
@@ -330,39 +332,37 @@ class Game {
   }
   async SpritesInit() {
     const [self, config] = [this, this.config];
-    for (const { name, tree, parts } of config.sprites) {
-      const Sprite = new self.Sprite(name, 0, 0);
-      for (const { name: partName, sub, costumes } of parts) {
-        for (const { name: costumeName, count: c, anchors: a } of costumes) {
-          const frames = Array.from(
-            { length: c },
-            (_, i) => `Sprites/${name}/${partName}/${costumeName}${i}.png`
-          );
-          const fixedFrames = await Promise.all(
-            frames.map(async (e) => {
-              const [result, w, h] = await self.imgCorrect(e);
-              const output = self.findAnchor(a, result, w);
-              return { pxls: result, anchors: output, w };
-            })
-          );
-          fixedFrames.forEach(({ pxls, w, anchor }) => {
-            for (let i = 0; i < pxls.length; i++) {
-              const y = Math.floor(i / w);
-              const x = i % w;
-              this.CTX.fillStyle = `rgb(${this.LUT[pxls[i]].join(",")})`;
-              console.log(this.LUT[pxls[i]]);
-              if (this.LUT[pxls[i]].join("-") === this.alpha.join("-"))
-                continue;
-              this.CTX.fillRect(x, y, 1, 1);
-              this.CTX.stroke();
-            }
-          });
-          console.log(partName, fixedFrames);
+    await Promise.all(
+      config.sprites.map(async ({ name, tree, parts }) => {
+        const Sprite = new self.Sprite(name, 0, 0);
+        for (const { name: partName, sub, costumes } of parts) {
+          for (const { name: costumeName, count: c, anchors: a } of costumes) {
+            const frames = Array.from(
+              { length: c },
+              (_, i) => `Sprites/${name}/${partName}/${costumeName}${i}.png`
+            );
+            const fixedFrames = await Promise.all(
+              frames.map(async (e) => {
+                const [result, w] = await self.imgCorrect(e);
+                const output = self.findAnchor(a, result, w);
+                return { pxls: result, anchors: output, w };
+              })
+            );
+            Sprite.costumes[partName] = {};
+            Sprite.costumes[partName][costumeName] = fixedFrames;
+          }
         }
-      }
-    }
+        this.sprites.push(Sprite);
+      })
+    );
   }
   findAnchor(colors, arr, w) {
-    return colors.map((e) => [e, "2_3"]); //xy or yx? currently xy placeholder
+    const result = [];
+    const self = this;
+    const anchors = colors.map((color) => self.COLORTREE.search(color));
+    for (const px of arr) {
+      // console.log(px);
+    }
+    // return colors.map((e) => [e, "2_3"]); //xy or yx? currently xy placeholder
   }
 }
