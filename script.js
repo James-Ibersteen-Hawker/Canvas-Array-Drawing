@@ -336,6 +336,7 @@ class Game {
       config.sprites.map(async ({ name, tree, parts }) => {
         const Sprite = new self.Sprite(name, 0, 0);
         for (const { name: partName, sub, costumes } of parts) {
+          Sprite.costumes[partName] = {};
           for (const { name: costumeName, count: c, anchors: a } of costumes) {
             const frames = Array.from(
               { length: c },
@@ -348,7 +349,6 @@ class Game {
                 return { pxls: result, anchors: output, w };
               })
             );
-            Sprite.costumes[partName] = {};
             Sprite.costumes[partName][costumeName] = fixedFrames;
           }
         }
@@ -359,10 +359,19 @@ class Game {
   findAnchor(colors, arr, w) {
     const result = [];
     const self = this;
-    const anchors = colors.map((color) => self.COLORTREE.search(color));
-    for (const px of arr) {
-      // console.log(px);
+    const anchors = new Set(
+      colors.map((color) => self.RGBto24bit(self.COLORTREE.search(color)))
+    );
+    for (let i = 0; i < arr.length; i++) {
+      const color = this.RGBto24bit(this.LUT[arr[i]]);
+      if (!anchors.has(color)) continue;
+      const x = i % w;
+      const y = Math.floor(i / w);
+      result.push([arr[i], [x, y].join("-")]);
     }
-    // return colors.map((e) => [e, "2_3"]); //xy or yx? currently xy placeholder
+    alert(result);
+  }
+  RGBto24bit([r, g, b]) {
+    return (r << 16) | (g << 8) | b;
   }
 }
