@@ -272,6 +272,19 @@ class Game {
         this.costumes = {};
       }
     };
+    this.Frame = class {
+      constructor(pxls, anchors, w) {
+        this.pxls = pxls;
+        this.anchors = anchors;
+        this.w = w;
+      }
+    };
+    this.Costume = class {
+      constructor(name) {
+        this.name = name;
+        this.frames = [];
+      }
+    };
     this.init(LUT_SRC);
   }
   async init(LUT) {
@@ -338,6 +351,9 @@ class Game {
         for (const { name: partName, sub, costumes } of parts) {
           Sprite.costumes[partName] = {};
           for (const { name: costumeName, count: c, anchors: a } of costumes) {
+            Sprite.costumes[partName][costumeName] = new self.Costume(
+              costumeName
+            );
             const frames = Array.from(
               { length: c },
               (_, i) => `Sprites/${name}/${partName}/${costumeName}${i}.png`
@@ -348,10 +364,10 @@ class Game {
                 const output = self.findAnchor(a, result, w);
                 if (output.length === 0)
                   throw new Error(`${e} is missing an anchor of anchors ${a}`);
-                return { pxls: result, anchors: output, w };
+                return new self.Frame(result, output, w);
               })
             );
-            Sprite.costumes[partName][costumeName] = fixedFrames;
+            Sprite.costumes[partName][costumeName].frames = fixedFrames;
           }
         }
         this.sprites.push(Sprite);
