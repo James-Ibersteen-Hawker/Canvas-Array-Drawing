@@ -2,6 +2,7 @@ class Game {
   LUT_SRC;
   CANVAS;
   constructor(LUT_SRC, CANVAS) {
+    const outSelf = this;
     this.COLORTREE;
     this.sprites = [];
     this.alpha = [];
@@ -277,6 +278,18 @@ class Game {
         this.pxls = pxls;
         this.anchors = anchors;
         this.w = w;
+        this.init();
+      }
+      init() {}
+      render(ix = 0, iy = 0) {
+        this.pxls.forEach((e, i) => {
+          if (outSelf.LUT[e].join("-") !== outSelf.alpha.join("-")) {
+            const x = (i % this.w) + ix;
+            const y = Math.floor(i / this.w) + iy;
+            outSelf.CTX.fillStyle = `rgb(${outSelf.LUT[e].join(",")})`;
+            outSelf.CTX.fillRect(x, y, 1, 1);
+          }
+        });
       }
     };
     this.Costume = class {
@@ -284,6 +297,7 @@ class Game {
         this.name = name;
         this.frames = [];
       }
+      next() {}
     };
     this.init(LUT_SRC);
   }
@@ -373,6 +387,11 @@ class Game {
         this.sprites.push(Sprite);
       })
     );
+    try {
+      this.sprites[0].costumes.leftArm.punch.frames[0].render();
+    } catch (error) {
+      alert(error);
+    }
   }
   findAnchor(colors, arr, w) {
     const result = [];
