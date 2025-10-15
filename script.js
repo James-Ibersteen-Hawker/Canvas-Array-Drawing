@@ -346,6 +346,8 @@ class Game {
               frames.map(async (e) => {
                 const [result, w] = await self.imgCorrect(e);
                 const output = self.findAnchor(a, result, w);
+                if (output.length === 0)
+                  throw new Error(`${e} is missing an anchor of anchors ${a}`);
                 return { pxls: result, anchors: output, w };
               })
             );
@@ -369,7 +371,7 @@ class Game {
       const y = Math.floor(i / w);
       result.push([arr[i], [x, y].join("-")]);
     }
-    alert(result);
+    return result;
   }
   RGBto24bit([r, g, b]) {
     return (r << 16) | (g << 8) | b;
