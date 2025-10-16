@@ -9,6 +9,7 @@
         {
           "name": "body",
           "sub": true,
+          "home": [0, 1, 0],
           "costumes": [
             {
               "name": "test",
@@ -20,6 +21,7 @@
         {
           "name": "leftArm",
           "sub": false,
+          "home": [223, 87, 255],
           "costumes": [
             {
               "name": "punch",
@@ -31,6 +33,7 @@
         {
           "name": "rightArm",
           "sub": false,
+          "home": [31, 31, 31],
           "costumes": [
             {
               "name": "punch",

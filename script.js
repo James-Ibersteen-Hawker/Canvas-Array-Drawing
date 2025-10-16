@@ -278,14 +278,18 @@ class Game {
         this.pxls = pxls;
         this.anchors = anchors;
         this.w = w;
+        this.home = null;
+        this.sub = null;
         this.init();
       }
       init() {}
       render(ix = 0, iy = 0) {
+        const [offX, offY] = this.anchors.home;
+        alert([offX, offY]);
         this.pxls.forEach((e, i) => {
           if (outSelf.LUT[e].join("-") !== outSelf.alpha.join("-")) {
-            const x = (i % this.w) + ix;
-            const y = Math.floor(i / this.w) + iy;
+            const x = (i % this.w) + ix - offX;
+            const y = Math.floor(i / this.w) + iy - offY;
             outSelf.CTX.fillStyle = `rgb(${outSelf.LUT[e].join(",")})`;
             outSelf.CTX.fillRect(x, y, 1, 1);
           }
@@ -362,8 +366,8 @@ class Game {
     await Promise.all(
       config.sprites.map(async ({ name, tree, parts }) => {
         const Sprite = new self.Sprite(name, 0, 0);
-        for (const { name: partName, sub, costumes } of parts) {
-          Sprite.costumes[partName] = {};
+        for (const { name: partName, sub, home, costumes } of parts) {
+          Sprite.costumes[partName] = { home, sub };
           for (const { name: costumeName, count: c, anchors: a } of costumes) {
             Sprite.costumes[partName][costumeName] = new self.Costume(
               costumeName
@@ -375,7 +379,7 @@ class Game {
             const fixedFrames = await Promise.all(
               frames.map(async (e) => {
                 const [result, w] = await self.imgCorrect(e);
-                const output = self.findAnchor(a, result, w);
+                const output = self.findAnchor(a, result, w, home);
                 if (output.length === 0)
                   throw new Error(`${e} is missing an anchor of anchors ${a}`);
                 return new self.Frame(result, output, w);
@@ -387,24 +391,22 @@ class Game {
         this.sprites.push(Sprite);
       })
     );
-    try {
-      this.sprites[0].costumes.leftArm.punch.frames[0].render();
-    } catch (error) {
-      alert(error);
-    }
+    this.sprites[0].costumes.leftArm.punch.frames[0].render();
   }
-  findAnchor(colors, arr, w) {
+  findAnchor(colors, arr, w, h) {
     const result = [];
     const self = this;
     const anchors = new Set(
       colors.map((color) => self.RGBto24bit(self.COLORTREE.search(color)))
     );
+    const home = self.RGBto24bit(self.COLORTREE.search(h));
     for (let i = 0; i < arr.length; i++) {
       const color = this.RGBto24bit(this.LUT[arr[i]]);
       if (!anchors.has(color)) continue;
       const x = i % w;
       const y = Math.floor(i / w);
-      result.push([arr[i], [x, y].join("-")]);
+      result.push([arr[i], [x, y]]);
+      if (home === color) result.home = [x, y];
     }
     return result;
   }
