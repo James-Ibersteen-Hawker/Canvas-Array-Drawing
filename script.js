@@ -7,8 +7,7 @@ class Game {
     this.sprites = [];
     this.alpha = [];
     this.config = null;
-    this.LUT = [];
-    this.LUT_LUT = new Map();
+    (this.LUT = []), (this.LUT_LUT = new Map());
     (this.CANVAS = CANVAS), (this.CTX = this.CANVAS.getContext("2d"));
     this.Octree = class {
       constructor(dataset) {
@@ -267,42 +266,92 @@ class Game {
     };
     this.Sprite = class {
       constructor(name, x, y) {
+        this._x = x;
+        this._y = y;
         this.name = name;
-        this.x = x;
-        this.y = y;
-        this.costumes = {};
+        this.tree = {};
+        this.parts = {};
+      }
+      render() {
+        const { x, y } = this;
+      }
+      move() {
+        
+      }
+      get x() {
+        return this._x;
+      }
+      get y() {
+        return this._y;
+      }
+      set x(v) {
+        this.move();
+        this._x = v;
+      }
+      set y(v) {
+        this.move();
+        this._y = v;
       }
     };
-    this.Frame = class {
-      constructor(pxls, anchors, w) {
-        this.pxls = pxls;
-        this.anchors = anchors;
-        this.w = w;
-        this.home = null;
-        this.sub = null;
-        this.init();
-      }
-      init() {}
-      render(ix = 0, iy = 0) {
-        const [offX, offY] = this.anchors.home;
-        alert([offX, offY]);
-        this.pxls.forEach((e, i) => {
-          if (outSelf.LUT[e].join("-") !== outSelf.alpha.join("-")) {
-            const x = (i % this.w) + ix - offX;
-            const y = Math.floor(i / this.w) + iy - offY;
-            outSelf.CTX.fillStyle = `rgb(${outSelf.LUT[e].join(",")})`;
-            outSelf.CTX.fillRect(x, y, 1, 1);
-          }
-        });
-      }
-    };
-    this.Costume = class {
-      constructor(name) {
-        this.name = name;
-        this.frames = [];
-      }
-      next() {}
-    };
+    // this.Frame = class {
+    //   constructor(pxls, anchors, w) {
+    //     this.pxls = pxls;
+    //     this.anchors = anchors;
+    //     this.w = w;
+    //     this.home = anchors.home;
+    //     this.sub = null;
+    //     this.init();
+    //   }
+    //   init() {}
+    //   render(ix = 0, iy = 0) {
+    //     const [offX, offY] = this.anchors.home;
+    //     this.pxls.forEach((e, i) => {
+    //       if (outSelf.LUT[e].join("-") !== outSelf.alpha.join("-")) {
+    //         const x = (i % this.w) + ix - offX;
+    //         const y = Math.floor(i / this.w) + iy - offY;
+    //         outSelf.CTX.fillStyle = `rgb(${outSelf.LUT[e].join(",")})`;
+    //         outSelf.CTX.fillRect(x, y, 1, 1);
+    //       }
+    //     });
+    //   }
+    // };
+    // this.Costume = class {
+    //   constructor(name) {
+    //     this.name = name;
+    //     this.frames = [];
+    //   }
+    //   next() {}
+    // };
+    // this.Part = class {
+    //   constructor(home, sub, x, y) {
+    //     this.home = home;
+    //     this.sub = sub;
+    //     this._x = x;
+    //     this._y = y;
+    //     this.tree = [];
+    //   }
+    //   get x() {
+    //     return this._x;
+    //   }
+    //   get y() {
+    //     return this._y;
+    //   }
+    //   set x(v) {
+    //     this._x = v;
+    //     this.shift();
+    //   }
+    //   set y(v) {
+    //     this._y = v;
+    //     this.shift();
+    //   }
+    //   shift() {
+    //     if (this.sub === true) {
+    //       this.tree.forEach(e => {
+    //         e.
+    //       })
+    //     }
+    //   }
+    // };
     this.init(LUT_SRC);
   }
   async init(LUT) {
@@ -366,26 +415,22 @@ class Game {
     await Promise.all(
       config.sprites.map(async ({ name, tree, parts }) => {
         const Sprite = new self.Sprite(name, 0, 0);
-        for (const { name: partName, sub, home, costumes } of parts) {
-          Sprite.costumes[partName] = { home, sub };
-          for (const { name: costumeName, count: c, anchors: a } of costumes) {
-            Sprite.costumes[partName][costumeName] = new self.Costume(
-              costumeName
-            );
-            const frames = Array.from(
-              { length: c },
-              (_, i) => `Sprites/${name}/${partName}/${costumeName}${i}.png`
-            );
-            const fixedFrames = await Promise.all(
-              frames.map(async (e) => {
-                const [result, w] = await self.imgCorrect(e);
+        for (const { name: part, sub, home, costumes } of parts) {
+          Sprite.costumes[part] = new this.Part(home, sub, 0, 0);
+          for (const { name: costume, count: c, anchors: a } of costumes) {
+            const frames = await Promise.all(
+              Array.from(
+                { length: c },
+                (_, i) => `Sprites/${name}/${part}/${costume}${i}.png`
+              ).map(async (path) => {
+                const [result, w] = await self.imgCorrect(path);
                 const output = self.findAnchor(a, result, w, home);
-                if (output.length === 0)
-                  throw new Error(`${e} is missing an anchor of anchors ${a}`);
-                return new self.Frame(result, output, w);
+                if (output.length > 0) return new self.Frame(result, output, w);
+                throw new Error(`${path} is missing an anchor of anchors ${a}`);
               })
             );
-            Sprite.costumes[partName][costumeName].frames = fixedFrames;
+            Sprite.costumes[part][costume] = new self.Costume(costume);
+            Sprite.costumes[part][costume].frames = frames;
           }
         }
         this.sprites.push(Sprite);
