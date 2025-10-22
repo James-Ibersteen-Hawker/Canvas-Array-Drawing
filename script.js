@@ -9,7 +9,6 @@ class Game {
     this.config = null;
     (this.LUT = []), (this.LUT_LUT = new Map());
     (this.CANVAS = CANVAS), (this.CTX = this.CANVAS.getContext("2d"));
-
     this.Octree = class {
       constructor(dataset) {
         const self = this;
@@ -134,13 +133,12 @@ class Game {
         return match;
       }
     };
-
     this.Quadtree = class {
       constructor(dataset) {
+        const self = this;
         this.DATA = dataset;
         this.LeafThreshold = 4;
-        this.TREE = this.make(this.DATA);
-        this.PREVIOUS = null;
+        this.PREVIOUS = undefined;
         this.xRange = [Infinity, -Infinity];
         this.yRange = [Infinity, -Infinity];
         this.DATA.forEach(([x, y]) => {
@@ -149,103 +147,89 @@ class Game {
           this.yRange[0] = Math.min(this.yRange[0], y);
           this.yRange[1] = Math.max(this.yRange[1], y);
         });
-      }
-      make(set, [xR1, xR2, yR1, yR2] = new Array(4).fill(undefined)) {
-        const self = this;
-        let [mX, mY, mxX, mxY] = [...set[0], ...set[0]];
-        if ([xR1, xR2, yR1, yR2].every((e) => e !== undefined)) {
-          [mX, mxX, mY, mxY] = [xR1, xR2, yR1, yR2];
-        } else {
-          set.forEach(([x, y]) => {
-            (mX = Math.min(mX, x)), (mxX = Math.max(mxX, x));
-            (mY = Math.min(mY, y)), (mxY = Math.max(mxY, y));
-          });
-        }
-        const dX = (mxX - mX) / 2 + mX;
-        const dY = (mxY - mY) / 2 + mY;
-        class Node {
+        this.Node = class {
           constructor() {
-            const inSelf = this;
             this.SUB = null;
             this.xRange = [Infinity, -Infinity];
             this.yRange = [Infinity, -Infinity];
-            this.CLOUD = new Proxy([], {
-              get(target, property) {
-                if (property === "push") {
-                  return function (...args) {
-                    if (args.every((e) => e.length === 2)) {
-                      let [mX, mxX] = inSelf.xRange;
-                      let [mY, mxY] = inSelf.yRange;
-                      args.forEach(([x, y]) => {
-                        (mX = Math.min(mX, x)), (mxX = Math.max(mxX, x));
-                        (mY = Math.min(mY, y)), (mxY = Math.max(mxY, y));
-                      });
-                      inSelf.xRange = [mX, mxX];
-                      inSelf.yRange = [mY, mxY];
-                    }
-                    return Array.prototype.push.apply(target, args);
-                  };
-                } else return Reflect.get(target, property);
-              },
-            });
+            this.CLOUD = [];
           }
           divide() {
+            let [mX, mxX] = this.xRange;
+            let [mY, mxY] = this.yRange;
+            this.CLOUD.forEach(([x, y]) => {
+              (mX = Math.min(mX, x)), (mxX = Math.max(mxX, x));
+              (mY = Math.min(mY, y)), (mxY = Math.max(mxY, y));
+            });
+            this.xRange = [mX, mxX];
+            this.yRange = [mY, mxY];
             if (this.CLOUD.length < self.LeafThreshold) return false;
             this.SUB = self.make(this.CLOUD, [...this.xRange, ...this.yRange]);
           }
+        };
+        this.TREE = this.make(this.DATA);
+      }
+      make(set, [xR1, xR2, yR1, yR2] = new Array(6).fill(undefined)) {
+        let [mX, mY] = set[0];
+        let [mxX, mxY] = set[0];
+        if ([xR1, xR2, yR1, yR2].every((e) => e !== undefined)) {
+          [mX, mxX, mY, mxY] = [xR1, xR2, yR1, yR2];
+        } else {
+          for (const [x, y] of set) {
+            (mX = Math.min(mX, x)), (mxX = Math.max(mxX, x));
+            (mY = Math.min(mY, y)), (mxY = Math.max(mxY, y));
+          }
         }
-        let Nodes = new Array(4).fill(null).map(() => new Node());
+        const dX = (mxX + mX) / 2;
+        const dY = (mxY + mY) / 2;
+        const Nodes = new Array(4).fill(null).map(() => new this.Node());
         set.forEach(([x, y]) => {
           const index = (x > dX ? 1 : 0) | (y > dY ? 2 : 0);
           Nodes[index].CLOUD.push([x, y]);
         });
-        Nodes = Nodes.filter((Node) => {
+        return Nodes.filter((Node) => {
           if (Node.CLOUD.length > 0) {
             Node.divide();
             return true;
           } else return false;
         });
-        return Nodes;
       }
       search(point, set = this.TREE) {
         let [x, y] = point;
-        x = Math.max(this.xRange[0], Math.min(this.xRange[1], x));
-        y = Math.max(this.yRange[0], Math.min(this.yRange[1], y));
+        const clamp = (v, min, max) => ((v > min ? v : min) < max ? v : max);
+        x = clamp(x, this.xRange[0], this.xRange[1]);
+        y = clamp(y, this.yRange[0], this.yRange[1]);
+        let includes = null;
         for (let i = 0; i < set.length; i++) {
-          const { xRange, yRange } = set[i];
-          if (
-            x >= xRange[0] &&
-            x <= xRange[1] &&
-            y >= yRange[0] &&
-            y <= yRange[1]
-          ) {
-            if (!set[i].SUB) return this.closest([x, y], set[i].CLOUD);
-            else if (set[i].SUB) {
-              this.PREVIOUS = set[i];
-              return this.search([x, y], set[i].SUB);
-            }
-          } else if (this.PREVIOUS)
-            return this.closest([x, y], this.PREVIOUS.CLOUD);
+          const xR = set[i].xRange;
+          const yR = set[i].yRange;
+          if (x >= xR[0] && x <= xR[1] && y >= yR[0] && y <= yR[1]) {
+            includes = set[i];
+            break;
+          }
         }
-        const { xRange, yRange } = set[0];
-        x = Math.max(xRange[0], Math.min(xRange[1], x));
-        y = Math.max(yRange[0], Math.min(yRange[1], y));
-        if (!set[0].SUB) return this.closest([x, y], set[0].CLOUD);
-        else return this.search([x, y], set[0].SUB);
+        if (!includes) includes = this.PREVIOUS || set[0];
+        this.PREVIOUS = includes;
+        if (!includes.SUB) return this.closest([x, y], includes.CLOUD);
+        else return this.search([x, y], includes.SUB);
       }
       closest(point, set) {
         this.PREVIOUS = undefined;
         let match = set[0];
-        let matchDist = null;
-        const [iX, iY] = point;
-        set.forEach(([x, y]) => {
-          const distance = Math.sqrt(Math.pow(x - iX, 2) + Math.pow(y - iY, 2));
-          if (!matchDist) matchDist = distance;
-          else if (distance < matchDist) {
-            matchDist = distance;
-            match = [x, y];
+        let matchDist = Infinity;
+        const compare = outSelf.RGBto24bit(point);
+        for (let i = 0; i < set.length; i++) {
+          const x = set[i][0],
+            y = set[i][1];
+          if (outSelf.RGBto24bit(set[i]) === compare) return point;
+          else {
+            const distance = (x - point[0]) ** 2 + (y - point[1]) ** 2;
+            if (distance < matchDist) {
+              matchDist = distance;
+              match = set[i];
+            }
           }
-        });
+        }
         return match;
       }
     };
@@ -282,65 +266,6 @@ class Game {
         this._y = v;
       }
     };
-    // this.Frame = class {
-    //   constructor(pxls, anchors, w) {
-    //     this.pxls = pxls;
-    //     this.anchors = anchors;
-    //     this.w = w;
-    //     this.home = anchors.home;
-    //     this.sub = null;
-    //     this.init();
-    //   }
-    //   init() {}
-    //   render(ix = 0, iy = 0) {
-    //     const [offX, offY] = this.anchors.home;
-    //     this.pxls.forEach((e, i) => {
-    //       if (outSelf.LUT[e].join("-") !== outSelf.alpha.join("-")) {
-    //         const x = (i % this.w) + ix - offX;
-    //         const y = Math.floor(i / this.w) + iy - offY;
-    //         outSelf.CTX.fillStyle = `rgb(${outSelf.LUT[e].join(",")})`;
-    //         outSelf.CTX.fillRect(x, y, 1, 1);
-    //       }
-    //     });
-    //   }
-    // };
-    // this.Costume = class {
-    //   constructor(name) {
-    //     this.name = name;
-    //     this.frames = [];
-    //   }
-    //   next() {}
-    // };
-    // this.Part = class {
-    //   constructor(home, sub, x, y) {
-    //     this.home = home;
-    //     this.sub = sub;
-    //     this._x = x;
-    //     this._y = y;
-    //     this.tree = [];
-    //   }
-    //   get x() {
-    //     return this._x;
-    //   }
-    //   get y() {
-    //     return this._y;
-    //   }
-    //   set x(v) {
-    //     this._x = v;
-    //     this.shift();
-    //   }
-    //   set y(v) {
-    //     this._y = v;
-    //     this.shift();
-    //   }
-    //   shift() {
-    //     if (this.sub === true) {
-    //       this.tree.forEach(e => {
-    //         e.
-    //       })
-    //     }
-    //   }
-    // };
     this.init(LUT_SRC);
   }
   async init(LUT) {
