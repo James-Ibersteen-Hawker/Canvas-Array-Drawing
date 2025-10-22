@@ -90,7 +90,7 @@ class Game {
         x = clamp(x, this.xRange[0], this.xRange[1]);
         y = clamp(y, this.yRange[0], this.yRange[1]);
         z = clamp(z, this.zRange[0], this.zRange[1]);
-        let includes = set[0];
+        let includes = null;
         for (let i = 0; i < set.length; i++) {
           const xR = set[i].xRange;
           const yR = set[i].yRange;
@@ -108,47 +108,23 @@ class Game {
           }
         }
         if (!includes) includes = this.PREVIOUS || set[0];
-
-        // for (let i = 0; i < set.length; i++) {
-        //   const xRange = set[i].xRange;
-        //   const yRange = set[i].yRange;
-        //   const zRange = set[i].zRange;
-        //   if (
-        //     x >= xRange[0] &&
-        //     x <= xRange[1] &&
-        //     y >= yRange[0] &&
-        //     y <= yRange[1] &&
-        //     z >= zRange[0] &&
-        //     z <= zRange[1]
-        //   ) {
-        //     if (!set[i].SUB) return this.closest([x, y, z], set[i].CLOUD);
-        //     else if (set[i].SUB) {
-        //       this.PREVIOUS = set[i];
-        //       return this.search([x, y, z], set[i].SUB);
-        //     }
-        //   } else if (this.PREVIOUS)
-        //     return this.closest([x, y, z], this.PREVIOUS.CLOUD);
-        // }
-
-        const { xRange, yRange, zRange } = set[0];
-        x = clamp(x, xRange[0], xRange[1]);
-        y = clamp(y, yRange[0], yRange[1]);
-        z = clamp(z, zRange[0], zRange[1]);
-        if (!set[0].SUB) return this.closest([x, y, z], set[0].CLOUD);
-        else return this.search([x, y, z], set[0].SUB);
+        this.PREVIOUS = includes;
+        if (!includes.SUB) return this.closest([x, y, z], includes.CLOUD);
+        else return this.search([x, y, z], includes.SUB);
       }
-      closest([iX, iY, iZ], set) {
+      closest(point, set) {
         this.PREVIOUS = undefined;
         let match = set[0];
         let matchDist = Infinity;
-        const compare = outSelf.RGBto24bit(iX, iY, iZ);
+        const compare = outSelf.RGBto24bit(point);
         for (let i = 0; i < set.length; i++) {
           const x = set[i][0],
             y = set[i][1],
             z = set[i][2];
-          if (outSelf.RGBto24bit(x, y, z) === compare) return [iX, iY, iZ];
+          if (outSelf.RGBto24bit(set[i]) === compare) return point;
           else {
-            const distance = (x - iX) ** 2 + (y - iY) ** 2 + (z - iZ) ** 2;
+            const distance =
+              (x - point[0]) ** 2 + (y - point[1]) ** 2 + (z - point[2]) ** 2;
             if (distance < matchDist) {
               matchDist = distance;
               match = set[i];
@@ -374,6 +350,11 @@ class Game {
     await this.LUT_init(LUT);
     this.CTX.imageSmoothingEnabled = false;
     this.COLORTREE = new this.Octree(this.LUT);
+    try {
+      alert("result" + this.COLORTREE.search([255, 31, 31]));
+    } catch (error) {
+      alert(error);
+    }
     await this.SpritesInit();
   }
   async LUT_init(LUT) {
