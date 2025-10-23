@@ -54,7 +54,7 @@ class Game {
             ]);
           }
         };
-        this.TREE = this.make(this.DATA);
+        this.SUB = this.make(this.DATA);
       }
       make(set, [xR1, xR2, yR1, yR2, zR1, zR2] = new Array(6).fill(undefined)) {
         let [mX, mY, mZ] = set[0];
@@ -83,33 +83,48 @@ class Game {
           } else return false;
         });
       }
-      search(point, set = this.TREE) {
+      search(point, set = this) {
         let [x, y, z] = point;
         const clamp = (v, min, max) => ((v > min ? v : min) < max ? v : max);
-        x = clamp(x, this.xRange[0], this.xRange[1]);
-        y = clamp(y, this.yRange[0], this.yRange[1]);
-        z = clamp(z, this.zRange[0], this.zRange[1]);
+        x = clamp(x, set.xRange[0], set.xRange[1]);
+        y = clamp(y, set.yRange[0], set.yRange[1]);
+        z = clamp(z, set.zRange[0], set.zRange[1]);
+        let closeX = Infinity;
+        let closeY = Infinity;
+        let closeZ = Infinity;
         let includes = null;
-        for (let i = 0; i < set.length; i++) {
-          const xR = set[i].xRange;
-          const yR = set[i].yRange;
-          const zR = set[i].zRange;
-          if (
-            x >= xR[0] &&
-            x <= xR[1] &&
-            y >= yR[0] &&
-            y <= yR[1] &&
-            z >= zR[0] &&
-            z <= zR[1]
-          ) {
-            includes = set[i];
-            break;
+        if (set.SUB) {
+          for (let i = 0; i < set.SUB.length; i++) {
+            const xR = set.SUB[i].xRange;
+            const yR = set.SUB[i].yRange;
+            const zR = set.SUB[i].zRange;
+            if (
+              x >= xR[0] &&
+              x <= xR[1] &&
+              y >= yR[0] &&
+              y <= yR[1] &&
+              z >= zR[0] &&
+              z <= zR[1]
+            ) {
+              includes = set.SUB[i];
+              break;
+            } else {
+              const xD = (xR[0] + xR[1]) / 2 - x;
+              const yD = (yR[0] + yR[1]) / 2 - y;
+              const zD = (zR[0] + zR[1]) / 2 - z;
+              if (xD < closeX && yD < closeY && zD < closeZ) {
+                closeX = xD;
+                closeY = yD;
+                closeZ = zD;
+                includes = set.SUB[i];
+              }
+            }
           }
         }
-        if (!includes) includes = this.PREVIOUS || set[0];
+        if (!includes) includes = this.PREVIOUS || set.SUB[1];
         this.PREVIOUS = includes;
         if (!includes.SUB) return this.closest([x, y, z], includes.CLOUD);
-        else return this.search([x, y, z], includes.SUB);
+        else return this.search([x, y, z], includes);
       }
       closest(point, set) {
         this.PREVIOUS = undefined;
