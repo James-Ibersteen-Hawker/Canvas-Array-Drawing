@@ -155,33 +155,7 @@ class Game {
         this.GET = (y, x) => this[y * w + x];
       }
     };
-    this.Sprite = class {
-      constructor(name, x, y) {
-        this._x = x;
-        this._y = y;
-        this.name = name;
-        this.tree = {};
-        this.parts = {};
-      }
-      render() {
-        const { x, y } = this;
-      }
-      move() {}
-      get x() {
-        return this._x;
-      }
-      get y() {
-        return this._y;
-      }
-      set x(v) {
-        this.move();
-        this._x = v;
-      }
-      set y(v) {
-        this.move();
-        this._y = v;
-      }
-    };
+    this.Sprite = class {};
     this.Part = class {}; //knows x,y, holds a constantly updating anchor reference??
     this.Costume = class {}; //intermediary, knows the current frame, can change frames, and sends anchor reference updates
     this.Frame = class {}; //knows only its own anchors
