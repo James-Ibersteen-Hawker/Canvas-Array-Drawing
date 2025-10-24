@@ -155,10 +155,35 @@ class Game {
         this.GET = (y, x) => this[y * w + x];
       }
     };
-    this.Sprite = class {};
-    this.Part = class {}; //knows x,y, holds a constantly updating anchor reference??
-    this.Costume = class {}; //intermediary, knows the current frame, can change frames, and sends anchor reference updates
-    this.Frame = class {}; //knows only its own anchors
+    this.Sprite = class {
+      constructor(x, y, name, sub) {
+        this.x = x;
+        this.y = y;
+        this.name = name;
+        this.sub = sub;
+      }
+    }; //parent, knows x,y, holds a list of currently requested costumes
+    this.Part = class {
+      constructor(x, y, name, home, sub, costumes) {
+        this.x = x;
+        this.y = y;
+        this.name = name;
+        this.sub = sub;
+        this.home = home;
+        this.costumes = costumes;
+      }
+    }; //knows x,y, holds a constantly updating anchor reference??
+    this.Costume = class {
+      constructor(name) {
+        this.name = name;
+      }
+    }; //intermediary, knows the current frame, can change frames, and sends anchor reference updates
+    this.Frame = class {
+      constructor(pxls, anchors) {
+        this.pxls = pxls;
+        this.anchors = anchors;
+      }
+    }; //knows only its own anchors
     this.init(LUT_SRC);
   }
   async init(LUT) {
