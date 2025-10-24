@@ -84,11 +84,16 @@ class Game {
         });
       }
       search(point, set = this.TREE) {
+        if (set === this.TREE) {
+          set.xRange = this.xRange;
+          set.yRange = this.yRange;
+          set.zRange = this.zRange;
+        }
         let [x, y, z] = point;
         const clamp = (v, min, max) => ((v > min ? v : min) < max ? v : max);
-        x = clamp(x, this.xRange[0], this.xRange[1]);
-        y = clamp(y, this.yRange[0], this.yRange[1]);
-        z = clamp(z, this.zRange[0], this.zRange[1]);
+        x = clamp(x, set.xRange[0], set.xRange[1]);
+        y = clamp(y, set.yRange[0], set.yRange[1]);
+        z = clamp(z, set.zRange[0], set.zRange[1]);
         let includes = null;
         for (let i = 0; i < set.length; i++) {
           const xR = set[i].xRange;
@@ -106,10 +111,11 @@ class Game {
             break;
           }
         }
+        console.log(includes);
         if (!includes) includes = this.PREVIOUS || set[0];
         this.PREVIOUS = includes;
         if (!includes.SUB) return this.closest([x, y, z], includes.CLOUD);
-        else return this.search([x, y, z], includes.SUB);
+        else return this.search([x, y, z], includes);
       }
       closest(point, set) {
         this.PREVIOUS = undefined;
@@ -278,7 +284,7 @@ class Game {
     try {
       alert("result" + this.COLORTREE.search([255, 31, 31]));
     } catch (error) {
-      alert(error);
+      throw new Error(error);
     }
     await this.SpritesInit();
   }
@@ -335,7 +341,7 @@ class Game {
       config.sprites.map(async ({ name, tree, parts }) => {
         const Sprite = new self.Sprite(name, 0, 0);
         for (const { name: part, sub, home, costumes } of parts) {
-          Sprite.costumes[part] = new this.Part(home, sub, 0, 0);
+          // Sprite.costumes[part] = new this.Part(home, sub, 0, 0);
           for (const { name: costume, count: c, anchors: a } of costumes) {
             const frames = await Promise.all(
               Array.from(
@@ -344,7 +350,7 @@ class Game {
               ).map(async (path) => {
                 const [result, w] = await self.imgCorrect(path);
                 const output = self.findAnchor(a, result, w, home);
-                if (output.length > 0) return new self.Frame(result, output, w);
+                // if (output.length > 0) return new self.Frame(result, output, w);
                 throw new Error(`${path} is missing an anchor of anchors ${a}`);
               })
             );
