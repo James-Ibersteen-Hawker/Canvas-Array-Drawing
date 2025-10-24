@@ -1,3 +1,4 @@
+"use strict";
 class Game {
   LUT_SRC;
   CANVAS;
@@ -161,29 +162,32 @@ class Game {
         this.y = y;
         this.name = name;
         this.sub = sub;
+        this.parts = [];
       }
     }; //parent, knows x,y, holds a list of currently requested costumes
     this.Part = class {
-      constructor(x, y, name, home, sub, costumes) {
+      constructor(x, y, name, home, sub) {
         this.x = x;
         this.y = y;
         this.name = name;
         this.sub = sub;
         this.home = home;
-        this.costumes = costumes;
+        this.costumes = [];
       }
     }; //knows x,y, holds a constantly updating anchor reference??
     this.Costume = class {
       constructor(name) {
         this.name = name;
+        this.frames = [];
       }
     }; //intermediary, knows the current frame, can change frames, and sends anchor reference updates
     this.Frame = class {
-      constructor(pxls, anchors) {
+      constructor(pxls, anchors, w) {
         this.pxls = pxls;
         this.anchors = anchors;
+        this.w = w;
       }
-    }; //knows only its own anchors
+    };
     this.init(LUT_SRC);
   }
   async init(LUT) {
@@ -246,29 +250,33 @@ class Game {
     const [self, config] = [this, this.config];
     await Promise.all(
       config.sprites.map(async ({ name, tree, parts }) => {
-        const Sprite = new self.Sprite(name, 0, 0);
-        for (const { name: part, sub, home, costumes } of parts) {
-          Sprite.costumes[part] = new this.Part(home, sub, 0, 0);
-          for (const { name: costume, count: c, anchors: a } of costumes) {
-            const frames = await Promise.all(
+        const Sprite = new self.Sprite(0, 0, name, tree);
+        for (const { name: partName, home, costumes } of parts) {
+          const Part = new this.Part(0, 0, partName, home);
+          for (const { name: costumeName, count, anchors } of costumes) {
+            const Costume = new this.Costume(costumeName);
+            Costume.frames = await Promise.all(
               Array.from(
-                { length: c },
-                (_, i) => `Sprites/${name}/${part}/${costume}${i}.png`
+                { length: count },
+                (_, i) => `Sprites/${name}/${partName}/${costumeName}${i}.png`
               ).map(async (path) => {
                 const [result, w] = await self.imgCorrect(path);
-                const output = self.findAnchor(a, result, w, home);
-                if (output.length > 0) return new self.Frame(result, output, w);
-                throw new Error(`${path} is missing an anchor of anchors ${a}`);
+                const anchorResults = self.findAnchor(anchors, result, w, home);
+                if (anchorResults.length > 0)
+                  return new self.Frame(result, anchorResults, w);
+                throw new Error(
+                  `${path} is missing an anchor of anchors ${anchors}`
+                );
               })
             );
-            Sprite.costumes[part][costume] = new self.Costume(costume);
-            Sprite.costumes[part][costume].frames = frames;
+            Part.costumes.push(Costume);
           }
+          Sprite.parts.push(Part);
         }
+        console.log(Sprite);
         this.sprites.push(Sprite);
       })
     );
-    this.sprites[0].costumes.leftArm.punch.frames[0].render();
   }
   findAnchor(colors, arr, w, h) {
     const result = [];
@@ -282,7 +290,6 @@ class Game {
       if (!anchors.has(color)) continue;
       const x = i % w;
       const y = Math.floor(i / w);
-      alert(arr[i]);
       result.push([this.LUT[arr[i]], [x, y]]);
       if (home === color) result.home = [x, y];
     }
