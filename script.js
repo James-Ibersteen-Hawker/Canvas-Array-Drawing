@@ -54,7 +54,7 @@ class Game {
             ]);
           }
         };
-        this.TREE = this.make(this.DATA);
+        this.SUB = this.make(this.DATA);
       }
       make(set, [xR1, xR2, yR1, yR2, zR1, zR2] = new Array(6).fill(undefined)) {
         let [mX, mY, mZ] = set[0];
@@ -83,36 +83,45 @@ class Game {
           } else return false;
         });
       }
-      search(point, set = this.TREE) {
-        if (set === this.TREE) {
-          set.xRange = this.xRange;
-          set.yRange = this.yRange;
-          set.zRange = this.zRange;
-        }
+      search(point, set = this) {
         let [x, y, z] = point;
         const clamp = (v, min, max) => ((v > min ? v : min) < max ? v : max);
         x = clamp(x, set.xRange[0], set.xRange[1]);
         y = clamp(y, set.yRange[0], set.yRange[1]);
         z = clamp(z, set.zRange[0], set.zRange[1]);
+        let closeX = Infinity;
+        let closeY = Infinity;
+        let closeZ = Infinity;
         let includes = null;
-        for (let i = 0; i < set.length; i++) {
-          const xR = set[i].xRange;
-          const yR = set[i].yRange;
-          const zR = set[i].zRange;
-          if (
-            x >= xR[0] &&
-            x <= xR[1] &&
-            y >= yR[0] &&
-            y <= yR[1] &&
-            z >= zR[0] &&
-            z <= zR[1]
-          ) {
-            includes = set[i];
-            break;
+        if (set.SUB) {
+          for (let i = 0; i < set.SUB.length; i++) {
+            const xR = set.SUB[i].xRange;
+            const yR = set.SUB[i].yRange;
+            const zR = set.SUB[i].zRange;
+            if (
+              x >= xR[0] &&
+              x <= xR[1] &&
+              y >= yR[0] &&
+              y <= yR[1] &&
+              z >= zR[0] &&
+              z <= zR[1]
+            ) {
+              includes = set.SUB[i];
+              break;
+            } else {
+              const xD = (xR[0] + xR[1]) / 2 - x;
+              const yD = (yR[0] + yR[1]) / 2 - y;
+              const zD = (zR[0] + zR[1]) / 2 - z;
+              if (xD < closeX && yD < closeY && zD < closeZ) {
+                closeX = xD;
+                closeY = yD;
+                closeZ = zD;
+                includes = set.SUB[i];
+              }
+            }
           }
         }
-        console.log(includes);
-        if (!includes) includes = this.PREVIOUS || set[0];
+        if (!includes) includes = this.PREVIOUS || set.SUB[1];
         this.PREVIOUS = includes;
         if (!includes.SUB) return this.closest([x, y, z], includes.CLOUD);
         else return this.search([x, y, z], includes);
@@ -139,106 +148,7 @@ class Game {
         return match;
       }
     };
-    this.Quadtree = class {
-      constructor(dataset) {
-        const self = this;
-        this.DATA = dataset;
-        this.LeafThreshold = 4;
-        this.PREVIOUS = undefined;
-        this.xRange = [Infinity, -Infinity];
-        this.yRange = [Infinity, -Infinity];
-        this.DATA.forEach(([x, y]) => {
-          this.xRange[0] = Math.min(this.xRange[0], x);
-          this.xRange[1] = Math.max(this.xRange[1], x);
-          this.yRange[0] = Math.min(this.yRange[0], y);
-          this.yRange[1] = Math.max(this.yRange[1], y);
-        });
-        this.Node = class {
-          constructor() {
-            this.SUB = null;
-            this.xRange = [Infinity, -Infinity];
-            this.yRange = [Infinity, -Infinity];
-            this.CLOUD = [];
-          }
-          divide() {
-            let [mX, mxX] = this.xRange;
-            let [mY, mxY] = this.yRange;
-            this.CLOUD.forEach(([x, y]) => {
-              (mX = Math.min(mX, x)), (mxX = Math.max(mxX, x));
-              (mY = Math.min(mY, y)), (mxY = Math.max(mxY, y));
-            });
-            this.xRange = [mX, mxX];
-            this.yRange = [mY, mxY];
-            if (this.CLOUD.length < self.LeafThreshold) return false;
-            this.SUB = self.make(this.CLOUD, [...this.xRange, ...this.yRange]);
-          }
-        };
-        this.TREE = this.make(this.DATA);
-      }
-      make(set, [xR1, xR2, yR1, yR2] = new Array(6).fill(undefined)) {
-        let [mX, mY] = set[0];
-        let [mxX, mxY] = set[0];
-        if ([xR1, xR2, yR1, yR2].every((e) => e !== undefined)) {
-          [mX, mxX, mY, mxY] = [xR1, xR2, yR1, yR2];
-        } else {
-          for (const [x, y] of set) {
-            (mX = Math.min(mX, x)), (mxX = Math.max(mxX, x));
-            (mY = Math.min(mY, y)), (mxY = Math.max(mxY, y));
-          }
-        }
-        const dX = (mxX + mX) / 2;
-        const dY = (mxY + mY) / 2;
-        const Nodes = new Array(4).fill(null).map(() => new this.Node());
-        set.forEach(([x, y]) => {
-          const index = (x > dX ? 1 : 0) | (y > dY ? 2 : 0);
-          Nodes[index].CLOUD.push([x, y]);
-        });
-        return Nodes.filter((Node) => {
-          if (Node.CLOUD.length > 0) {
-            Node.divide();
-            return true;
-          } else return false;
-        });
-      }
-      search(point, set = this.TREE) {
-        let [x, y] = point;
-        const clamp = (v, min, max) => ((v > min ? v : min) < max ? v : max);
-        x = clamp(x, this.xRange[0], this.xRange[1]);
-        y = clamp(y, this.yRange[0], this.yRange[1]);
-        let includes = null;
-        for (let i = 0; i < set.length; i++) {
-          const xR = set[i].xRange;
-          const yR = set[i].yRange;
-          if (x >= xR[0] && x <= xR[1] && y >= yR[0] && y <= yR[1]) {
-            includes = set[i];
-            break;
-          }
-        }
-        if (!includes) includes = this.PREVIOUS || set[0];
-        this.PREVIOUS = includes;
-        if (!includes.SUB) return this.closest([x, y], includes.CLOUD);
-        else return this.search([x, y], includes.SUB);
-      }
-      closest(point, set) {
-        this.PREVIOUS = undefined;
-        let match = set[0];
-        let matchDist = Infinity;
-        const compare = outSelf.RGBto24bit(point);
-        for (let i = 0; i < set.length; i++) {
-          const x = set[i][0],
-            y = set[i][1];
-          if (outSelf.RGBto24bit(set[i]) === compare) return point;
-          else {
-            const distance = (x - point[0]) ** 2 + (y - point[1]) ** 2;
-            if (distance < matchDist) {
-              matchDist = distance;
-              match = set[i];
-            }
-          }
-        }
-        return match;
-      }
-    };
+    //this.Quadtree
     this.Uint8 = class extends Uint8Array {
       constructor(arg, w) {
         super(arg);
@@ -272,6 +182,9 @@ class Game {
         this._y = v;
       }
     };
+    this.Part = class {}; //knows x,y, holds a constantly updating anchor reference??
+    this.Costume = class {}; //intermediary, knows the current frame, can change frames, and sends anchor reference updates
+    this.Frame = class {}; //knows only its own anchors
     this.init(LUT_SRC);
   }
   async init(LUT) {
@@ -281,11 +194,6 @@ class Game {
     await this.LUT_init(LUT);
     this.CTX.imageSmoothingEnabled = false;
     this.COLORTREE = new this.Octree(this.LUT);
-    try {
-      alert("result" + this.COLORTREE.search([255, 31, 31]));
-    } catch (error) {
-      throw new Error(error);
-    }
     await this.SpritesInit();
   }
   async LUT_init(LUT) {
@@ -341,7 +249,7 @@ class Game {
       config.sprites.map(async ({ name, tree, parts }) => {
         const Sprite = new self.Sprite(name, 0, 0);
         for (const { name: part, sub, home, costumes } of parts) {
-          // Sprite.costumes[part] = new this.Part(home, sub, 0, 0);
+          Sprite.costumes[part] = new this.Part(home, sub, 0, 0);
           for (const { name: costume, count: c, anchors: a } of costumes) {
             const frames = await Promise.all(
               Array.from(
@@ -350,7 +258,7 @@ class Game {
               ).map(async (path) => {
                 const [result, w] = await self.imgCorrect(path);
                 const output = self.findAnchor(a, result, w, home);
-                // if (output.length > 0) return new self.Frame(result, output, w);
+                if (output.length > 0) return new self.Frame(result, output, w);
                 throw new Error(`${path} is missing an anchor of anchors ${a}`);
               })
             );
@@ -375,7 +283,8 @@ class Game {
       if (!anchors.has(color)) continue;
       const x = i % w;
       const y = Math.floor(i / w);
-      result.push([arr[i], [x, y]]);
+      alert(arr[i]);
+      result.push([this.LUT[arr[i]], [x, y]]);
       if (home === color) result.home = [x, y];
     }
     return result;
