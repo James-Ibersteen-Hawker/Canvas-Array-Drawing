@@ -291,10 +291,15 @@ class Game {
     }
     await Promise.all(
       config.sprites.map(async ({ name, tree, parts }) => {
+        const Sprite = new self.Sprite(0, 0, name, tree);
         await Promise.all(
           parts.map(async ({ name: part, home, sub, costumes }) => {
+            const Part = new self.Part(null, null, part, home, sub);
+            Sprite.parts.push(Part);
             await Promise.all(
               costumes.map(async ({ name: costume, count, anchors }) => {
+                const Costume = new self.Costume(costume, count);
+                Part.costumes.push(Costume);
                 const frames = Array.from(
                   { length: count },
                   (_, i) => `/Sprites/${name}/${part}/${costume}${i}.png`
@@ -306,49 +311,19 @@ class Game {
                       anchors,
                       home
                     ).run();
+                    Costume.frames.push(result);
                   })
                 );
               })
             );
           })
         );
+        self.sprites.push(Sprite);
       })
     );
     console.timeEnd();
+    console.log(self.sprites);
   }
-  // async SpritesInit() {
-  //   const [self, config] = [this, this.config];
-  //   await Promise.all(
-  //     config.sprites.map(async ({ name, tree, parts }) => {
-  //       const Sprite = new self.Sprite(0, 0, name, tree);
-  //       for (const { name: partName, home, costumes } of parts) {
-  //         const Part = new this.Part(0, 0, partName, home);
-  //         for (const { name: costumeName, count, anchors } of costumes) {
-  //           const Costume = new this.Costume(costumeName);
-  //           Costume.frames = await Promise.all(
-  //             Array.from(
-  //               { length: count },
-  //               (_, i) => `Sprites/${name}/${partName}/${costumeName}${i}.png`
-  //             ).map(async (path) => {
-  //               const [result, w] = await self.imgCorrect(path);
-  //               const anchorResults = self.findAnchor(anchors, result, w, home);
-  //               if (anchorResults.length > 0)
-  //                 return new self.Frame(result, anchorResults, w);
-  //               throw new Error(
-  //                 `${path} is missing an anchor of anchors ${anchors}`
-  //               );
-  //             })
-  //           );
-  //           Part.costumes.push(Costume);
-  //         }
-  //         Sprite.parts.push(Part);
-  //       }
-  //       console.log(Sprite);
-  //       this.sprites.push(Sprite);
-  //     })
-  //   );
-  //   console.timeEnd();
-  // }
   findAnchor(colors, arr, w, h) {
     const result = [];
     const self = this;
