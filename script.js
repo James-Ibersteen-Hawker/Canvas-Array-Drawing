@@ -8,7 +8,7 @@ class Game {
     this.sprites = [];
     this.alpha = [];
     this.config = null;
-    (this.LUT = []), (this.LUT_LUT = new Map());
+    (this.LUT = []), (this.LUT_LUT = []);
     (this.CANVAS = CANVAS), (this.CTX = this.CANVAS.getContext("2d"));
     this.Octree = class {
       constructor(dataset) {
@@ -176,16 +176,25 @@ class Game {
       }
     }; //knows x,y, holds a constantly updating anchor reference??
     this.Costume = class {
-      constructor(name) {
+      constructor(name, count) {
         this.name = name;
+        this.count = count;
         this.frames = [];
+        this.index = 0;
+        this.current = null;
+      }
+      next() {
+        this.current = this.frames[this.index];
+        this.index > this.frames.length - 1 ? (this.index = 0) : this.index++;
+        const homeAnchor = this.current.home;
       }
     }; //intermediary, knows the current frame, can change frames, and sends anchor reference updates
     this.Frame = class {
-      constructor(pxls, anchors, w) {
+      constructor(pxls, anchors, w, home) {
         this.pxls = pxls;
         this.anchors = anchors;
         this.w = w;
+        this.home = home;
       }
     };
     this.init(LUT_SRC);
@@ -197,7 +206,17 @@ class Game {
     await this.LUT_init(LUT);
     this.CTX.imageSmoothingEnabled = false;
     this.COLORTREE = new this.Octree(this.LUT);
-    await this.SpritesInit();
+    // await this.SpritesInit();
+    const [result, w, h] = await this.imgCorrect("/test.png");
+    for (let i = 0; i < result.length; i++) {
+      const x = i % w;
+      const y = Math.floor(i / w);
+      const color = this.LUT[result[i]];
+      if (result[i] !== 2) {
+        this.CTX.fillStyle = `rgb(${color.join(",")})`;
+        this.CTX.fillRect(x, y, 1, 1);
+      }
+    }
   }
   async LUT_init(LUT) {
     const text = await (await fetch(LUT)).text();
@@ -205,78 +224,68 @@ class Game {
     this.LUT = Array.from({ length: list.length }, (_, i) =>
       list[i].split(" ").map((e) => Number(e))
     );
+    this.LUT_LUT = Array.from(this.LUT, (e) => this.RGBto24bit(e));
   }
   async imgCorrect(imgsrc) {
     const image = new Image();
     image.src = imgsrc;
-    await new Promise((resolve) => (image.onload = resolve));
-    const w = image.width;
-    const h = image.height;
+    await image.decode();
+    const { width: w, height: h } = image;
     const output = new this.Uint8(w * h, w);
-    const input = new Uint32Array(w * h);
     this.CTX.drawImage(image, 0, 0, w, h);
     const data = this.CTX.getImageData(0, 0, w, h).data;
-    const alphaIndexes = new Set();
     for (let i = 0, incr = 0; i < data.length; i += 4, incr++) {
-      let r = Number(data[i]);
-      let g = Number(data[i + 1]);
-      let b = Number(data[i + 2]);
-      if (Number(data[i + 3]) < 255) alphaIndexes.add(incr);
-      const color = ((r << 16) | (g << 8) | b) >>> 0;
-      input[incr] = color;
+      let r = data[i];
+      let g = data[i + 1];
+      let b = data[i + 2];
+      let a = data[i + 3];
+      const color = [r, g, b];
+      let result;
+      if (a === 255) {
+        result = this.RGBto24bit(this.COLORTREE.search(color));
+      } else result = this.RGBto24bit(this.alpha);
+      const finalColor = this.LUT_LUT.findIndex((e) => e === result);
+      output[incr] = finalColor;
     }
-    input.forEach((rgbNum, i) => {
-      if (!alphaIndexes.has(i)) {
-        const x = (rgbNum >> 16) & 0xff;
-        const y = (rgbNum >> 8) & 0xff;
-        const z = rgbNum & 0xff;
-        const result = this.COLORTREE.search([x, y, z]);
-        const color = this.LUT.findIndex(
-          (e) => e[0] === result[0] && e[1] === result[1] && e[2] === result[2]
-        );
-        output[i] = color;
-      } else {
-        const result = this.alpha;
-        const color = this.LUT.findIndex(
-          (e) => e[0] === result[0] && e[1] === result[1] && e[2] === result[2]
-        );
-        output[i] = color;
-      }
-    });
     this.CTX.clearRect(0, 0, w, h);
     return [output, w, h];
   }
   async SpritesInit() {
-    const [self, config] = [this, this.config];
-    await Promise.all(
-      config.sprites.map(async ({ name, tree, parts }) => {
-        const Sprite = new self.Sprite(0, 0, name, tree);
-        for (const { name: partName, home, costumes } of parts) {
-          const Part = new this.Part(0, 0, partName, home);
-          for (const { name: costumeName, count, anchors } of costumes) {
-            const Costume = new this.Costume(costumeName);
-            Costume.frames = await Promise.all(
-              Array.from(
-                { length: count },
-                (_, i) => `Sprites/${name}/${partName}/${costumeName}${i}.png`
-              ).map(async (path) => {
-                const [result, w] = await self.imgCorrect(path);
-                const anchorResults = self.findAnchor(anchors, result, w, home);
-                if (anchorResults.length > 0)
-                  return new self.Frame(result, anchorResults, w);
-                throw new Error(
-                  `${path} is missing an anchor of anchors ${anchors}`
-                );
-              })
-            );
-            Part.costumes.push(Costume);
-          }
-          Sprite.parts.push(Part);
-        }
-        console.log(Sprite);
-        this.sprites.push(Sprite);
-      })
-    );
+    // const [self, config] = [this, this.config];
+    // await Promise.all(
+    //   config.sprites.map(async ({ name, tree, parts }) => {
+    //     const Sprite = new self.Sprite(0, 0, name, tree);
+    //     for (const { name: partName, home, costumes } of parts) {
+    //       const Part = new self.Part(0, 0, partName, home);
+    //       for (const { name: costumeName, count, anchors } of costumes) {
+    //         const Costume = new self.Costume(costumeName, count);
+    //         Costume.frames = await Promise.all(
+    //           Array.from(
+    //             { length: count },
+    //             (_, i) => `Sprites/${name}/${partName}/${costumeName}${i}.png`
+    //           ).map(async (path) => {
+    //             const [result, w] = await self.imgCorrect(path);
+    //             const anchorResults = self.findAnchor(anchors, result, w, home);
+    //             if (anchorResults.length > 0)
+    //               return new self.Frame(
+    //                 result,
+    //                 anchorResults,
+    //                 w,
+    //                 anchorResults.home
+    //               );
+    //             throw new Error(
+    //               `${path} is missing an anchor of anchors ${anchors}`
+    //             );
+    //           })
+    //         );
+    //         Part.costumes.push(Costume);
+    //       }
+    //       Sprite.parts.push(Part);
+    //     }
+    //     console.log(Sprite);
+    //     this.sprites.push(Sprite);
+    //   })
+    // );
   }
   findAnchor(colors, arr, w, h) {
     const result = [];
@@ -298,4 +307,8 @@ class Game {
   RGBto24bit([r, g, b]) {
     return (r << 16) | (g << 8) | b;
   }
+}
+
+class Request {
+  constructor(path, self) {}
 }
