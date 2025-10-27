@@ -207,7 +207,9 @@ class Game {
     this.CTX.imageSmoothingEnabled = false;
     this.COLORTREE = new this.Octree(this.LUT);
     // await this.SpritesInit();
+    console.time();
     const [result, w, h] = await this.imgCorrect("/test.png");
+    console.timeEnd();
     for (let i = 0; i < result.length; i++) {
       const x = i % w;
       const y = Math.floor(i / w);
@@ -307,8 +309,4 @@ class Game {
   RGBto24bit([r, g, b]) {
     return (r << 16) | (g << 8) | b;
   }
-}
-
-class Request {
-  constructor(path, self) {}
 }
