@@ -62,7 +62,7 @@ class Game {
         let [mX, mY, mZ] = set[0];
         let [mxX, mxY, mxZ] = set[0];
         if ([xR1, xR2, yR1, yR2, zR1, zR2].every((e) => e !== undefined)) {
-          [mX, mxX, mY, mxY, mxZ, mxZ] = [xR1, xR2, yR1, yR2, zR1, zR2];
+          [mX, mxX, mY, mxY, mZ, mxZ] = [xR1, xR2, yR1, yR2, zR1, zR2];
         } else {
           for (const [x, y, z] of set) {
             (mX = Math.min(mX, x)), (mxX = Math.max(mxX, x));
@@ -91,9 +91,7 @@ class Game {
         x = clamp(x, set.xRange[0], set.xRange[1]);
         y = clamp(y, set.yRange[0], set.yRange[1]);
         z = clamp(z, set.zRange[0], set.zRange[1]);
-        let closeX = Infinity;
-        let closeY = Infinity;
-        let closeZ = Infinity;
+        let bestDist = Infinity;
         let includes = null;
         if (set.SUB) {
           for (let i = 0; i < set.SUB.length; i++) {
@@ -111,13 +109,12 @@ class Game {
               includes = set.SUB[i];
               break;
             } else {
-              const xD = (xR[0] + xR[1]) / 2 - x;
-              const yD = (yR[0] + yR[1]) / 2 - y;
-              const zD = (zR[0] + zR[1]) / 2 - z;
-              if (xD < closeX && yD < closeY && zD < closeZ) {
-                closeX = xD;
-                closeY = yD;
-                closeZ = zD;
+              const xD = (xR[0] + xR[1]) / 2;
+              const yD = (yR[0] + yR[1]) / 2;
+              const zD = (zR[0] + zR[1]) / 2;
+              const testDist = (xD - x) ** 2 + (yD - y) ** 2 + (zD - z) ** 2;
+              if (testDist < bestDist) {
+                bestDist = testDist;
                 includes = set.SUB[i];
               }
             }
@@ -196,7 +193,7 @@ class Game {
       }
       next() {
         this.current = this.frames[this.index];
-        this.index > this.frames.length - 1 ? (this.index = 0) : this.index++;
+        this.index = (this.index + 1) % this.frames.length;
         const homeAnchor = this.current.home;
         this.parent.x = homeAnchor[0];
         this.parent.y = homeAnchor[1];
@@ -268,14 +265,18 @@ class Game {
       send() {
         const temp = [...this.queue];
         this.queue = [];
-        temp.forEach(async (e) => e());
+        try {
+          temp.forEach(async (e) => e());
+        } catch (error) {
+          throw new Error(error);
+        }
         clearTimeout(this.timer);
       },
       queueIn(v) {
         this.queue.push(v);
         if (this.queue.length >= count) this.send();
         clearTimeout(this.timer);
-        this.timer = setTimeout(this.send(), timeOut);
+        this.timer = setTimeout(() => this.send(), timeOut);
       },
     };
     class Request {
@@ -318,7 +319,7 @@ class Game {
                 Part.costumes.push(Costume);
                 const frames = Array.from(
                   { length: count },
-                  (_, i) => `/Sprites/${name}/${part}/${costume}${i}.png`
+                  (_, i) => `Sprites/${name}/${part}/${costume}${i}.png`
                 );
                 await Promise.all(
                   frames.map(async (frame) => {
