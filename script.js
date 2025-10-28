@@ -1,4 +1,5 @@
 "use strict";
+let spriteToTest;
 class Game {
   LUT_SRC;
   CANVAS;
@@ -149,7 +150,6 @@ class Game {
         return match;
       }
     };
-    //this.Quadtree
     this.Uint8 = class extends Uint8Array {
       constructor(arg, w) {
         super(arg);
@@ -164,6 +164,7 @@ class Game {
         this.sub = sub;
         this.parts = [];
       }
+      render() {}
     }; //parent, knows x,y, holds a list of currently requested costumes
     this.Part = class {
       constructor(x, y, name, home, sub) {
@@ -172,24 +173,39 @@ class Game {
         this.name = name;
         this.sub = sub;
         this.home = home;
+        this.w = null;
         this.costumes = [];
+        this.pxls = null;
+      }
+      render(xOffset = 0, yOffset = 0) {
+        for (let i = 0; i < this.pxls.length; i++) {
+          const x = (i % this.w) + xOffset - this.x;
+          const y = Math.floor(i / w) + yOffset - this.y;
+          outSelf.CTX.fillRect(); //add here
+        }
       }
     }; //knows x,y, holds a constantly updating anchor reference??
     this.Costume = class {
-      constructor(name, count) {
+      constructor(name, count, parent) {
         this.name = name;
         this.count = count;
         this.frames = [];
         this.index = 0;
         this.current = null;
+        this.parent = parent;
       }
       next() {
         this.current = this.frames[this.index];
         this.index > this.frames.length - 1 ? (this.index = 0) : this.index++;
         const homeAnchor = this.current.home;
+        this.parent.x = homeAnchor[0];
+        this.parent.y = homeAnchor[1];
+        this.parent.pxls = this.current.pxls;
+        this.parent.w = this.current.w;
       }
     }; //intermediary, knows the current frame, can change frames, and sends anchor reference updates
     this.Frame = class {
+      //static. Does nothing
       constructor(pxls, anchors, w, home) {
         this.pxls = pxls;
         this.anchors = anchors;
@@ -246,7 +262,7 @@ class Game {
   async SpritesInit() {
     const [self, config] = [this, this.config];
     const count = 6;
-    const timeOut = 100;
+    const timeOut = 50;
     const Batch = {
       queue: [],
       send() {
@@ -273,14 +289,14 @@ class Game {
         return new Promise(async (resolve, reject) => {
           Batch.queueIn(async function () {
             const [result, w] = await self.imgCorrect(inself.path);
-            const output = self.findAnchor(
+            const [output, home] = self.findAnchor(
               inself.anchors,
               result,
               w,
               inself.home
             );
             if (output.length > 0)
-              resolve(new self.Frame(result, output, w, output.home));
+              resolve(new self.Frame(result, output, w, home));
             else
               reject(
                 `${inself.path} is missing an anchor of anchors ${inself.anchors}`
@@ -298,7 +314,7 @@ class Game {
             Sprite.parts.push(Part);
             await Promise.all(
               costumes.map(async ({ name: costume, count, anchors }) => {
-                const Costume = new self.Costume(costume, count);
+                const Costume = new self.Costume(costume, count, Part);
                 Part.costumes.push(Costume);
                 const frames = Array.from(
                   { length: count },
@@ -323,9 +339,11 @@ class Game {
     );
     console.timeEnd();
     console.log(self.sprites);
+    spriteToTest = self.sprites[0];
   }
   findAnchor(colors, arr, w, h) {
     const result = [];
+    let homeFound = null;
     const self = this;
     const anchors = new Set(
       colors.map((color) => self.RGBto24bit(self.COLORTREE.search(color)))
@@ -337,9 +355,9 @@ class Game {
       const x = i % w;
       const y = Math.floor(i / w);
       result.push([this.LUT[arr[i]], [x, y]]);
-      if (home === color) result.home = [x, y];
+      if (home === color) homeFound = [x, y];
     }
-    return result;
+    return [result, homeFound];
   }
   RGBto24bit([r, g, b]) {
     return (r << 16) | (g << 8) | b;

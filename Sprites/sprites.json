@@ -9,7 +9,7 @@
         {
           "name": "body",
           "sub": true,
-          "home": [0, 1, 0],
+          "home": [0, 0, 156],
           "costumes": [
             {
               "name": "test",
