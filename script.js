@@ -242,7 +242,7 @@ class Game {
       Array.from(this.LUT, (e, i) => [this.RGBto24bit(e), i])
     );
   }
-  async imgCorrect(imgsrc, next) {
+  async imgCorrect(imgsrc) {
     const image = new Image();
     image.src = imgsrc;
     await image.decode();
@@ -268,98 +268,117 @@ class Game {
     }
     return [output, w, h];
   }
+  // async SpritesInit() {
+  //   const [self, config] = [this, this.config];
+  //   const count = 6;
+  //   const timeOut = 50;
+  //   const Batch = {
+  //     queue: [],
+  //     send() {
+  //       const temp = [...this.queue];
+  //       this.queue = [];
+  //       try {
+  //         temp.forEach(async (e) => e());
+  //       } catch (error) {
+  //         throw new Error(error);
+  //       }
+  //       clearTimeout(this.timer);
+  //     },
+  //     queueIn(v) {
+  //       this.queue.push(v);
+  //       if (this.queue.length >= count) this.send();
+  //       clearTimeout(this.timer);
+  //       this.timer = setTimeout(() => this.send(), timeOut);
+  //     },
+  //   };
+  //   class Request {
+  //     constructor(path, anchors, home) {
+  //       this.path = path;
+  //       this.anchors = anchors;
+  //       this.home = home;
+  //     }
+  //     async run() {
+  //       const inself = this;
+  //       return new Promise(async (resolve, reject) => {
+  //         Batch.queueIn(async function () {
+  //           const [result, w] = await self.imgCorrect(inself.path);
+  //           const [output, home] = self.findAnchor(
+  //             inself.anchors,
+  //             result,
+  //             w,
+  //             inself.home
+  //           );
+  //           if (output.length > 0)
+  //             resolve(new self.Frame(result, output, w, home));
+  //           else
+  //             reject(
+  //               `${inself.path} is missing an anchor of anchors ${inself.anchors}`
+  //             );
+  //         });
+  //       });
+  //     }
+  //   }
+  //   await Promise.all(
+  //     config.sprites.map(async ({ name, tree, parts }) => {
+  //       const Sprite = new self.Sprite(0, 0, name, tree);
+  //       await Promise.all(
+  //         parts.map(async ({ name: part, home, sub, costumes }) => {
+  //           const Part = new self.Part(null, null, part, home, sub);
+  //           Sprite.parts.push(Part);
+  //           await Promise.all(
+  //             costumes.map(async ({ name: costume, count, anchors }) => {
+  //               const Costume = new self.Costume(costume, count, Part);
+  //               Part.costumes.push(Costume);
+  //               const frames = Array.from(
+  //                 { length: count },
+  //                 (_, i) => `Sprites/${name}/${part}/${costume}${i}.png`
+  //               );
+  //               await Promise.all(
+  //                 frames.map(async (frame) => {
+  //                   const result = await new Request(
+  //                     frame,
+  //                     anchors,
+  //                     home
+  //                   ).run();
+  //                   Costume.frames.push(result);
+  //                 })
+  //               );
+  //             })
+  //           );
+  //         })
+  //       );
+  //       self.sprites.push(Sprite);
+  //     })
+  //   );
+  //   console.log(self.sprites);
+  //   spriteToTest = self.sprites[0];
+  //   console.log(this.alphaKey);
+  //   console.log(this.LUT[2]);
+  //   const interval = setInterval(() => {
+  //     spriteToTest.parts[1].costumes[0].next();
+  //   }, 200);
+  //   window.addEventListener("click", () => {
+  //     clearInterval(interval);
+  //   });
+  // }
   async SpritesInit() {
     const [self, config] = [this, this.config];
-    const count = 6;
-    const timeOut = 50;
-    const Batch = {
-      queue: [],
-      send() {
-        const temp = [...this.queue];
-        this.queue = [];
-        try {
-          temp.forEach(async (e) => e());
-        } catch (error) {
-          throw new Error(error);
+    for (const { name: sprite, tree, parts } of config.sprites) {
+      const Sprite = new self.Sprite(0, 0, sprite, tree);
+      for (const { name: part, home, sub, costumes } of parts) {
+        const Part = new self.Part(null, null, part, home, sub);
+        Sprite.parts.push(Part);
+        for (const { name: costume, count, anchors } of costumes) {
+          const Costume = new self.Costume(costume, count, Part);
+          Part.costumes.push(Costume);
+          const frames = Array.from(
+            { length: count },
+            (_, i) => `Sprites/${name}/${part}/${costume}${i}.png`
+          );
         }
-        clearTimeout(this.timer);
-      },
-      queueIn(v) {
-        this.queue.push(v);
-        if (this.queue.length >= count) this.send();
-        clearTimeout(this.timer);
-        this.timer = setTimeout(() => this.send(), timeOut);
-      },
-    };
-    class Request {
-      constructor(path, anchors, home) {
-        this.path = path;
-        this.anchors = anchors;
-        this.home = home;
       }
-      async run() {
-        const inself = this;
-        return new Promise(async (resolve, reject) => {
-          Batch.queueIn(async function () {
-            const [result, w] = await self.imgCorrect(inself.path);
-            const [output, home] = self.findAnchor(
-              inself.anchors,
-              result,
-              w,
-              inself.home
-            );
-            if (output.length > 0)
-              resolve(new self.Frame(result, output, w, home));
-            else
-              reject(
-                `${inself.path} is missing an anchor of anchors ${inself.anchors}`
-              );
-          });
-        });
-      }
+      self.sprites.push(Sprite);
     }
-    await Promise.all(
-      config.sprites.map(async ({ name, tree, parts }) => {
-        const Sprite = new self.Sprite(0, 0, name, tree);
-        await Promise.all(
-          parts.map(async ({ name: part, home, sub, costumes }) => {
-            const Part = new self.Part(null, null, part, home, sub);
-            Sprite.parts.push(Part);
-            await Promise.all(
-              costumes.map(async ({ name: costume, count, anchors }) => {
-                const Costume = new self.Costume(costume, count, Part);
-                Part.costumes.push(Costume);
-                const frames = Array.from(
-                  { length: count },
-                  (_, i) => `Sprites/${name}/${part}/${costume}${i}.png`
-                );
-                await Promise.all(
-                  frames.map(async (frame) => {
-                    const result = await new Request(
-                      frame,
-                      anchors,
-                      home
-                    ).run();
-                    Costume.frames.push(result);
-                  })
-                );
-              })
-            );
-          })
-        );
-        self.sprites.push(Sprite);
-      })
-    );
-    console.log(self.sprites);
-    spriteToTest = self.sprites[0];
-    console.log(this.alphaKey);
-    console.log(this.LUT[2]);
-    const interval = setInterval(() => {
-      spriteToTest.parts[1].costumes[0].next();
-    }, 500);
-    window.addEventListener("click", () => {
-      clearInterval(interval);
-    });
   }
   findAnchor(colors, arr, w, h) {
     const result = [];
