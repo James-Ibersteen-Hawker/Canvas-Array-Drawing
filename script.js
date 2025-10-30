@@ -8,6 +8,7 @@ class Game {
     this.COLORTREE;
     this.sprites = [];
     this.alpha = [];
+    this.alphaKey;
     this.config = null;
     (this.LUT = []), (this.LUT_LUT = []);
     (this.CANVAS = CANVAS), (this.CTX = this.CANVAS.getContext("2d"));
@@ -175,10 +176,19 @@ class Game {
         this.pxls = null;
       }
       render(xOffset = 0, yOffset = 0) {
+        outSelf.CTX.clearRect(0, 0, 500, 500);
         for (let i = 0; i < this.pxls.length; i++) {
           const x = (i % this.w) + xOffset - this.x;
-          const y = Math.floor(i / w) + yOffset - this.y;
-          outSelf.CTX.fillRect(); //add here
+          const y = Math.floor(i / this.w) + yOffset - this.y;
+          if (
+            outSelf.RGBto24bit(outSelf.LUT[this.pxls[i]]) !==
+            outSelf.RGBto24bit(outSelf.alpha)
+          ) {
+            outSelf.CTX.fillStyle = `rgb(${outSelf.LUT[this.pxls[i]].join(
+              ","
+            )})`;
+            outSelf.CTX.fillRect(x, y, 1, 1);
+          } //add here
         }
       }
     }; //knows x,y, holds a constantly updating anchor reference??
@@ -199,6 +209,7 @@ class Game {
         this.parent.y = homeAnchor[1];
         this.parent.pxls = this.current.pxls;
         this.parent.w = this.current.w;
+        this.parent.render(10, 10);
       }
     }; //intermediary, knows the current frame, can change frames, and sends anchor reference updates
     this.Frame = class {
@@ -219,8 +230,6 @@ class Game {
     await this.LUT_init(LUT);
     this.CTX.imageSmoothingEnabled = false;
     this.COLORTREE = new this.Octree(this.LUT);
-    // await this.SpritesInit();
-    console.time();
     await this.SpritesInit();
   }
   async LUT_init(LUT) {
@@ -233,14 +242,18 @@ class Game {
       Array.from(this.LUT, (e, i) => [this.RGBto24bit(e), i])
     );
   }
-  async imgCorrect(imgsrc) {
+  async imgCorrect(imgsrc, next) {
     const image = new Image();
     image.src = imgsrc;
     await image.decode();
     const { width: w, height: h } = image;
+    const canvas = new OffscreenCanvas(w, h);
+    const inCTX = canvas.getContext("2d");
     const output = new this.Uint8(w * h, w);
-    this.CTX.drawImage(image, 0, 0, w, h);
-    const data = this.CTX.getImageData(0, 0, w, h).data;
+    inCTX.drawImage(image, 0, 0, w, h);
+    const data = inCTX.getImageData(0, 0, w, h).data;
+    inCTX.clearRect(0, 0, w, h);
+    // next();
     for (let i = 0, incr = 0; i < data.length; i += 4, incr++) {
       let r = data[i];
       let g = data[i + 1];
@@ -253,7 +266,6 @@ class Game {
       const finalColor = this.LUT_LUT.get(result);
       output[incr] = finalColor;
     }
-    this.CTX.clearRect(0, 0, w, h);
     return [output, w, h];
   }
   async SpritesInit() {
@@ -338,9 +350,16 @@ class Game {
         self.sprites.push(Sprite);
       })
     );
-    console.timeEnd();
     console.log(self.sprites);
     spriteToTest = self.sprites[0];
+    console.log(this.alphaKey);
+    console.log(this.LUT[2]);
+    const interval = setInterval(() => {
+      spriteToTest.parts[1].costumes[0].next();
+    }, 500);
+    window.addEventListener("click", () => {
+      clearInterval(interval);
+    });
   }
   findAnchor(colors, arr, w, h) {
     const result = [];
