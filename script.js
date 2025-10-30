@@ -176,7 +176,6 @@ class Game {
         this.pxls = null;
       }
       render(xOffset = 0, yOffset = 0) {
-        outSelf.CTX.clearRect(0, 0, 500, 500);
         for (let i = 0; i < this.pxls.length; i++) {
           const x = (i % this.w) + xOffset - this.x;
           const y = Math.floor(i / this.w) + yOffset - this.y;
@@ -211,16 +210,15 @@ class Game {
         this.parent.w = this.current.w;
         this.parent.render(10, 10);
       }
-    }; //intermediary, knows the current frame, can change frames, and sends anchor reference updates
+    }; //implemented
     this.Frame = class {
-      //static. Does nothing
       constructor(pxls, anchors, w, home) {
         this.pxls = pxls;
         this.anchors = anchors;
         this.w = w;
         this.home = home;
       }
-    };
+    }; //implemented
     this.init(LUT_SRC);
   }
   async init(LUT) {
@@ -268,117 +266,98 @@ class Game {
     }
     return [output, w, h];
   }
-  // async SpritesInit() {
-  //   const [self, config] = [this, this.config];
-  //   const count = 6;
-  //   const timeOut = 50;
-  //   const Batch = {
-  //     queue: [],
-  //     send() {
-  //       const temp = [...this.queue];
-  //       this.queue = [];
-  //       try {
-  //         temp.forEach(async (e) => e());
-  //       } catch (error) {
-  //         throw new Error(error);
-  //       }
-  //       clearTimeout(this.timer);
-  //     },
-  //     queueIn(v) {
-  //       this.queue.push(v);
-  //       if (this.queue.length >= count) this.send();
-  //       clearTimeout(this.timer);
-  //       this.timer = setTimeout(() => this.send(), timeOut);
-  //     },
-  //   };
-  //   class Request {
-  //     constructor(path, anchors, home) {
-  //       this.path = path;
-  //       this.anchors = anchors;
-  //       this.home = home;
-  //     }
-  //     async run() {
-  //       const inself = this;
-  //       return new Promise(async (resolve, reject) => {
-  //         Batch.queueIn(async function () {
-  //           const [result, w] = await self.imgCorrect(inself.path);
-  //           const [output, home] = self.findAnchor(
-  //             inself.anchors,
-  //             result,
-  //             w,
-  //             inself.home
-  //           );
-  //           if (output.length > 0)
-  //             resolve(new self.Frame(result, output, w, home));
-  //           else
-  //             reject(
-  //               `${inself.path} is missing an anchor of anchors ${inself.anchors}`
-  //             );
-  //         });
-  //       });
-  //     }
-  //   }
-  //   await Promise.all(
-  //     config.sprites.map(async ({ name, tree, parts }) => {
-  //       const Sprite = new self.Sprite(0, 0, name, tree);
-  //       await Promise.all(
-  //         parts.map(async ({ name: part, home, sub, costumes }) => {
-  //           const Part = new self.Part(null, null, part, home, sub);
-  //           Sprite.parts.push(Part);
-  //           await Promise.all(
-  //             costumes.map(async ({ name: costume, count, anchors }) => {
-  //               const Costume = new self.Costume(costume, count, Part);
-  //               Part.costumes.push(Costume);
-  //               const frames = Array.from(
-  //                 { length: count },
-  //                 (_, i) => `Sprites/${name}/${part}/${costume}${i}.png`
-  //               );
-  //               await Promise.all(
-  //                 frames.map(async (frame) => {
-  //                   const result = await new Request(
-  //                     frame,
-  //                     anchors,
-  //                     home
-  //                   ).run();
-  //                   Costume.frames.push(result);
-  //                 })
-  //               );
-  //             })
-  //           );
-  //         })
-  //       );
-  //       self.sprites.push(Sprite);
-  //     })
-  //   );
-  //   console.log(self.sprites);
-  //   spriteToTest = self.sprites[0];
-  //   console.log(this.alphaKey);
-  //   console.log(this.LUT[2]);
-  //   const interval = setInterval(() => {
-  //     spriteToTest.parts[1].costumes[0].next();
-  //   }, 200);
-  //   window.addEventListener("click", () => {
-  //     clearInterval(interval);
-  //   });
-  // }
   async SpritesInit() {
     const [self, config] = [this, this.config];
-    for (const { name: sprite, tree, parts } of config.sprites) {
-      const Sprite = new self.Sprite(0, 0, sprite, tree);
-      for (const { name: part, home, sub, costumes } of parts) {
-        const Part = new self.Part(null, null, part, home, sub);
-        Sprite.parts.push(Part);
-        for (const { name: costume, count, anchors } of costumes) {
-          const Costume = new self.Costume(costume, count, Part);
-          Part.costumes.push(Costume);
-          const frames = Array.from(
-            { length: count },
-            (_, i) => `Sprites/${name}/${part}/${costume}${i}.png`
-          );
+    const count = 6;
+    const timeOut = 50;
+    const Batch = {
+      queue: [],
+      async send() {
+        const temp = [...this.queue];
+        this.queue = [];
+        try {
+          for (let i = 0; i < temp.length; i++) await temp[i]();
+        } catch (error) {
+          throw new Error(error);
         }
+        clearTimeout(this.timer);
+      },
+      queueIn(v) {
+        this.queue.push(v);
+        if (this.queue.length >= count) this.send();
+        clearTimeout(this.timer);
+        this.timer = setTimeout(() => this.send(), timeOut);
+      },
+    };
+    class Request {
+      constructor(path, anchors, home) {
+        this.path = path;
+        this.anchors = anchors;
+        this.home = home;
       }
-      self.sprites.push(Sprite);
+      async run() {
+        const inself = this;
+        return new Promise(async (resolve, reject) => {
+          Batch.queueIn(async function () {
+            const [result, w] = await self.imgCorrect(inself.path);
+            const [output, home] = self.findAnchor(
+              inself.anchors,
+              result,
+              w,
+              inself.home
+            );
+            if (output.length > 0)
+              resolve(new self.Frame(result, output, w, home));
+            else
+              reject(
+                `${inself.path} is missing an anchor of anchors ${inself.anchors}`
+              );
+          });
+        });
+      }
     }
+    await Promise.all(
+      config.sprites.map(async ({ name, tree, parts }) => {
+        const Sprite = new self.Sprite(0, 0, name, tree);
+        await Promise.all(
+          parts.map(async ({ name: part, home, sub, costumes }) => {
+            const Part = new self.Part(null, null, part, home, sub);
+            Sprite.parts.push(Part);
+            await Promise.all(
+              costumes.map(async ({ name: costume, count, anchors }) => {
+                const Costume = new self.Costume(costume, count, Part);
+                Part.costumes.push(Costume);
+                const frames = Array.from(
+                  { length: count },
+                  (_, i) => `Sprites/${name}/${part}/${costume}${i}.png`
+                );
+                const fixed = await Promise.all(
+                  frames.map(async (frame, i) => {
+                    const result = await new Request(
+                      frame,
+                      anchors,
+                      home
+                    ).run();
+                    return { r: result, num: i };
+                  })
+                );
+                fixed.sort((a, b) => a.num - b.num);
+                Costume.frames.push(...fixed.map((e) => e.r));
+              })
+            );
+          })
+        );
+        self.sprites.push(Sprite);
+      })
+    );
+    spriteToTest = self.sprites[0];
+    const interval = setInterval(() => {
+      this.CTX.clearRect(0, 0, 500, 500);
+      spriteToTest.parts[1].costumes[0].next();
+    }, 100);
+    window.addEventListener("click", () => {
+      clearInterval(interval);
+    });
   }
   findAnchor(colors, arr, w, h) {
     const result = [];
