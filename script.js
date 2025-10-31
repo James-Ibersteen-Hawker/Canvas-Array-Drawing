@@ -161,19 +161,19 @@ class Game {
         this.name = name;
         this.tree = sub;
         this.parts = [];
+        this.partsRef = null;
       }
       init() {
-        const structure = [];
-        const parts = new Map(this.parts.map((e) => [e.name, e]));
-        this.parts.forEach((part) => {
-          const { parent, name } = part;
+        this.partsRef = new Map(this.parts.map((e) => [e.name, e]));
+        this.parts.forEach((e) => {
+          const parent = e.parent;
           if (parent) {
-            structure;
+            const out = this.partsRef.get(parent);
+            out.under.push(e);
           }
         });
-        //go through the parts and assign them into an array that mimics the tree structure, then assign back to this.tree
       }
-      render(part) {}
+      render() {}
     }; //parent, knows x,y, holds a list of currently requested costumes
     this.Part = class {
       constructor(x, y, name, home, sub, parent) {
@@ -183,6 +183,7 @@ class Game {
         this.sub = sub;
         this.home = home;
         this.w = null;
+        this.under = [];
         this.costumes = [];
         this.pxls = null;
         this.parent = parent;
@@ -252,18 +253,17 @@ class Game {
       Array.from(this.LUT, (e, i) => [this.RGBto24bit(e), i])
     );
   }
-  async imgCorrect(imgsrc) {
+  async imgCorrect(context, imgsrc) {
     const image = new Image();
     image.src = imgsrc;
     await image.decode();
     const { width: w, height: h } = image;
     const canvas = new OffscreenCanvas(w, h);
     const inCTX = canvas.getContext("2d");
-    const output = new this.Uint8(w * h, w);
+    const output = new context.Uint8(w * h, w);
     inCTX.drawImage(image, 0, 0, w, h);
     const data = inCTX.getImageData(0, 0, w, h).data;
     inCTX.clearRect(0, 0, w, h);
-    // next();
     for (let i = 0, incr = 0; i < data.length; i += 4, incr++) {
       let r = data[i];
       let g = data[i + 1];
@@ -271,9 +271,10 @@ class Game {
       let a = data[i + 3];
       const color = [r, g, b];
       let result;
-      if (a === 255) result = this.RGBto24bit(this.COLORTREE.search(color));
-      else result = this.RGBto24bit(this.alpha);
-      const finalColor = this.LUT_LUT.get(result);
+      if (a === 255)
+        result = context.RGBto24bit(context.COLORTREE.search(color));
+      else result = context.RGBto24bit(context.alpha);
+      const finalColor = context.LUT_LUT.get(result);
       output[incr] = finalColor;
     }
     return [output, w, h];
@@ -287,12 +288,8 @@ class Game {
       async send() {
         const temp = [...this.queue];
         this.queue = [];
-        try {
-          for (let i = 0; i < temp.length; i++) await temp[i]();
-        } catch (error) {
-          throw new Error(error);
-        }
         clearTimeout(this.timer);
+        await Promise.all(temp.map((e) => e()));
       },
       queueIn(v) {
         this.queue.push(v);
@@ -311,7 +308,7 @@ class Game {
         const inself = this;
         return new Promise(async (resolve, reject) => {
           Batch.queueIn(async function () {
-            const [result, w] = await self.imgCorrect(inself.path);
+            const [result, w] = await self.imgCorrect(self, inself.path);
             const [output, home] = self.findAnchor(
               inself.anchors,
               result,
@@ -345,12 +342,16 @@ class Game {
                 );
                 const fixed = await Promise.all(
                   frames.map(async (frame, i) => {
-                    const result = await new Request(
-                      frame,
-                      anchors,
-                      home
-                    ).run();
-                    return { r: result, num: i };
+                    try {
+                      const result = await new Request(
+                        frame,
+                        anchors,
+                        home
+                      ).run();
+                      return { r: result, num: i };
+                    } catch (error) {
+                      throw new Error(error);
+                    }
                   })
                 );
                 fixed.sort((a, b) => a.num - b.num);
@@ -359,15 +360,17 @@ class Game {
             );
           })
         );
-        try {
-          Sprite.init();
-        } catch (error) {
-          alert(error);
-        }
+        Sprite.init();
         self.sprites.push(Sprite);
       })
     );
     spriteToTest = self.sprites[0];
+    console.log(spriteToTest);
+    const interval = setInterval(() => {
+      this.CTX.clearRect(0, 0, 500, 500);
+      spriteToTest.parts[1].costumes[0].next(10);
+      spriteToTest.parts[2].costumes[0].next();
+    }, 100);
   }
   findAnchor(colors, arr, w, h) {
     const result = [];
