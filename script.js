@@ -187,7 +187,7 @@ class Game {
               ","
             )})`;
             outSelf.CTX.fillRect(x, y, 1, 1);
-          } //add here
+          }
         }
       }
     }; //knows x,y, holds a constantly updating anchor reference??
@@ -200,7 +200,7 @@ class Game {
         this.current = null;
         this.parent = parent;
       }
-      next() {
+      next(x = 0, y = 0) {
         this.current = this.frames[this.index];
         this.index = (this.index + 1) % this.frames.length;
         const homeAnchor = this.current.home;
@@ -208,7 +208,7 @@ class Game {
         this.parent.y = homeAnchor[1];
         this.parent.pxls = this.current.pxls;
         this.parent.w = this.current.w;
-        this.parent.render(10, 10);
+        this.parent.render(10 + x, 10 + y);
       }
     }; //implemented
     this.Frame = class {
