@@ -159,13 +159,24 @@ class Game {
         this.x = x;
         this.y = y;
         this.name = name;
-        this.sub = sub;
+        this.tree = sub;
         this.parts = [];
       }
-      render() {}
+      init() {
+        const structure = [];
+        const parts = new Map(this.parts.map((e) => [e.name, e]));
+        this.parts.forEach((part) => {
+          const {parent, name} = part;
+          if (parent) {
+            structure;
+          }
+        });
+        //go through the parts and assign them into an array that mimics the tree structure, then assign back to this.tree
+      }
+      render(part) {}
     }; //parent, knows x,y, holds a list of currently requested costumes
     this.Part = class {
-      constructor(x, y, name, home, sub) {
+      constructor(x, y, name, home, sub, parent) {
         this.x = x;
         this.y = y;
         this.name = name;
@@ -174,6 +185,7 @@ class Game {
         this.w = null;
         this.costumes = [];
         this.pxls = null;
+        this.parent = parent;
       }
       render(xOffset = 0, yOffset = 0) {
         for (let i = 0; i < this.pxls.length; i++) {
@@ -190,7 +202,7 @@ class Game {
           } //add here
         }
       }
-    }; //knows x,y, holds a constantly updating anchor reference??
+    };
     this.Costume = class {
       constructor(name, count, parent) {
         this.name = name;
@@ -208,9 +220,8 @@ class Game {
         this.parent.y = homeAnchor[1];
         this.parent.pxls = this.current.pxls;
         this.parent.w = this.current.w;
-        this.parent.render(10, 10);
       }
-    }; //implemented
+    };
     this.Frame = class {
       constructor(pxls, anchors, w, home) {
         this.pxls = pxls;
@@ -218,7 +229,7 @@ class Game {
         this.w = w;
         this.home = home;
       }
-    }; //implemented
+    };
     this.init(LUT_SRC);
   }
   async init(LUT) {
@@ -320,8 +331,8 @@ class Game {
       config.sprites.map(async ({ name, tree, parts }) => {
         const Sprite = new self.Sprite(0, 0, name, tree);
         await Promise.all(
-          parts.map(async ({ name: part, home, sub, costumes }) => {
-            const Part = new self.Part(null, null, part, home, sub);
+          parts.map(async ({ name: part, home, sub, costumes, parent }) => {
+            const Part = new self.Part(null, null, part, home, sub, parent);
             Sprite.parts.push(Part);
             await Promise.all(
               costumes.map(async ({ name: costume, count, anchors }) => {
@@ -347,17 +358,15 @@ class Game {
             );
           })
         );
+        try {
+          Sprite.init();
+        } catch (error) {
+          alert(error);
+        }
         self.sprites.push(Sprite);
       })
     );
     spriteToTest = self.sprites[0];
-    const interval = setInterval(() => {
-      this.CTX.clearRect(0, 0, 500, 500);
-      spriteToTest.parts[1].costumes[0].next();
-    }, 100);
-    window.addEventListener("click", () => {
-      clearInterval(interval);
-    });
   }
   findAnchor(colors, arr, w, h) {
     const result = [];
@@ -380,4 +389,5 @@ class Game {
   RGBto24bit([r, g, b]) {
     return (r << 16) | (g << 8) | b;
   }
+  async play() {}
 }
