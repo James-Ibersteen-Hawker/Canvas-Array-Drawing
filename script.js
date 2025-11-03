@@ -162,33 +162,46 @@ class Game {
         this.tree = sub;
         this.parts = [];
         this.partsRef = null;
+        this.topPart = null;
       }
       init() {
         this.partsRef = new Map(this.parts.map((e) => [e.name, e]));
-        this.parts.forEach((e) => {
-          const parent = e.parent;
-          if (parent) {
-            const out = this.partsRef.get(parent);
-            out.under.push(e);
-          }
-        });
+        this.initParts(this.tree);
       }
-      render() {}
-    }; //parent, knows x,y, holds a list of currently requested costumes
+      initParts(part = this.tree) {
+        const { name, sub } = part;
+        let count = 0;
+        for (const part of sub) {
+          if (!part.sub) {
+            count++;
+            continue;
+          }
+          this.partsRef.get(name).under.push(this.partsRef.get(part.name));
+          this.initParts(part);
+        }
+        if (count === sub.length) return;
+      }
+      render() {
+        this.parts.forEach((e) => e.nextFrame());
+        const topPart = this.partsRef.get(this.tree.name);
+        alert(topPart.name);
+        alert("here");
+        topPart.render();
+      } //recursive ish renderer
+    }; //parent, knows x,y, holds a list of currently requested costumes. I need to set defaults for initial operation startup
     this.Part = class {
-      constructor(x, y, name, home, sub, parent) {
-        this.x = x;
-        this.y = y;
-        this.name = name;
-        this.sub = sub;
-        this.home = home;
-        this.w = null;
-        this.under = [];
-        this.costumes = [];
-        this.pxls = null;
-        this.parent = parent;
+      constructor(x, y, name, home /*parent*/) {
+        (this.x = x), (this.y = y), (this.w = null);
+        (this.name = name), (this.home = home);
+        (this.under = []), (this.costumes = []);
+        (this.anchors = null), (this.pxls = null);
+        (this.currentCostume = null), (this.costumeRef = null);
+      }
+      init() {
+        this.costumeRef = new Map(this.costumes.map((e) => [e.name, e]));
       }
       render(xOffset = 0, yOffset = 0) {
+        alert(this.anchors);
         for (let i = 0; i < this.pxls.length; i++) {
           const x = (i % this.w) + xOffset - this.x;
           const y = Math.floor(i / this.w) + yOffset - this.y;
@@ -202,6 +215,10 @@ class Game {
             outSelf.CTX.fillRect(x, y, 1, 1);
           }
         }
+        if (this.under.length > 0) this.under.forEach((e) => e.render());
+      }
+      nextFrame() {
+        this.costumeRef.get(this.currentCostume).next();
       }
     };
     this.Costume = class {
@@ -213,7 +230,7 @@ class Game {
         this.current = null;
         this.parent = parent;
       }
-      next(x = 0, y = 0) {
+      next() {
         this.current = this.frames[this.index];
         this.index = (this.index + 1) % this.frames.length;
         const homeAnchor = this.current.home;
@@ -221,7 +238,8 @@ class Game {
         this.parent.y = homeAnchor[1];
         this.parent.pxls = this.current.pxls;
         this.parent.w = this.current.w;
-        this.parent.render(10 + x, 10 + y);
+        this.parent.anchors = this.current.anchors;
+        this.parent.currentCostume = this.name;
       }
     };
     this.Frame = class {
@@ -329,8 +347,8 @@ class Game {
       config.sprites.map(async ({ name, tree, parts }) => {
         const Sprite = new self.Sprite(0, 0, name, tree);
         await Promise.all(
-          parts.map(async ({ name: part, home, sub, costumes, parent }) => {
-            const Part = new self.Part(null, null, part, home, sub, parent);
+          parts.map(async ({ name: part, home, costumes /*parent*/ }) => {
+            const Part = new self.Part(null, null, part, home /*parent*/);
             Sprite.parts.push(Part);
             await Promise.all(
               costumes.map(async ({ name: costume, count, anchors }) => {
@@ -366,11 +384,16 @@ class Game {
     );
     spriteToTest = self.sprites[0];
     console.log(spriteToTest);
-    const interval = setInterval(() => {
-      this.CTX.clearRect(0, 0, 500, 500);
-      spriteToTest.parts[1].costumes[0].next(10);
-      spriteToTest.parts[2].costumes[0].next();
-    }, 100);
+    // const interval = setInterval(() => {
+    //   this.CTX.clearRect(0, 0, 500, 500);
+    //   spriteToTest.parts[1].costumes[0].next(10);
+    //   spriteToTest.parts[2].costumes[0].next();
+    // }, 100);
+    try {
+      spriteToTest.render();
+    } catch (error) {
+      alert(error);
+    }
   }
   findAnchor(colors, arr, w, h) {
     const result = [];
