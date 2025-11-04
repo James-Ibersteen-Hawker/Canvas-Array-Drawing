@@ -187,10 +187,10 @@ class Game {
         alert(topPart.name);
         alert("here");
         topPart.render();
-      } //recursive ish renderer
-    }; //parent, knows x,y, holds a list of currently requested costumes. I need to set defaults for initial operation startup
+      }
+    };
     this.Part = class {
-      constructor(x, y, name, home /*parent*/) {
+      constructor(x, y, name, home) {
         (this.x = x), (this.y = y), (this.w = null);
         (this.name = name), (this.home = home);
         (this.under = []), (this.costumes = []);
@@ -217,9 +217,7 @@ class Game {
         }
         if (this.under.length > 0) this.under.forEach((e) => e.render());
       }
-      nextFrame() {
-        this.costumeRef.get(this.currentCostume).next();
-      }
+      nextFrame() {}
     };
     this.Costume = class {
       constructor(name, count, parent) {
