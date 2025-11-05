@@ -182,11 +182,8 @@ class Game {
         if (count === sub.length) return;
       }
       render() {
-        this.parts.forEach((e) => e.nextFrame());
         const topPart = this.partsRef.get(this.tree.name);
-        alert(topPart.name);
-        alert("here");
-        topPart.render();
+        topPart.render(this.x, this.y);
       }
     };
     this.Part = class {
@@ -200,8 +197,11 @@ class Game {
       init() {
         this.costumeRef = new Map(this.costumes.map((e) => [e.name, e]));
       }
+      set(name) {
+        this.currentCostume = this.costumeRef.get(name);
+      }
       render(xOffset = 0, yOffset = 0) {
-        alert(this.anchors);
+        console.log(this.anchors || "no anchor");
         for (let i = 0; i < this.pxls.length; i++) {
           const x = (i % this.w) + xOffset - this.x;
           const y = Math.floor(i / this.w) + yOffset - this.y;
@@ -215,9 +215,12 @@ class Game {
             outSelf.CTX.fillRect(x, y, 1, 1);
           }
         }
-        if (this.under.length > 0) this.under.forEach((e) => e.render());
+        if (this.under.length > 0)
+          this.under.forEach((e) => {
+            console.log(e.home);
+            e.render();
+          });
       }
-      nextFrame() {}
     };
     this.Costume = class {
       constructor(name, count, parent) {
@@ -231,13 +234,13 @@ class Game {
       next() {
         this.current = this.frames[this.index];
         this.index = (this.index + 1) % this.frames.length;
-        const homeAnchor = this.current.home;
+        let homeAnchor = this.current.home;
+        if (homeAnchor === null) homeAnchor = new Array(2).fill(0);
         this.parent.x = homeAnchor[0];
         this.parent.y = homeAnchor[1];
         this.parent.pxls = this.current.pxls;
         this.parent.w = this.current.w;
         this.parent.anchors = this.current.anchors;
-        this.parent.currentCostume = this.name;
       }
     };
     this.Frame = class {
@@ -347,7 +350,7 @@ class Game {
         await Promise.all(
           parts.map(async ({ name: part, home, costumes /*parent*/ }) => {
             const Part = new self.Part(null, null, part, home /*parent*/);
-            Sprite.parts.push(Part);
+
             await Promise.all(
               costumes.map(async ({ name: costume, count, anchors }) => {
                 const Costume = new self.Costume(costume, count, Part);
@@ -374,6 +377,8 @@ class Game {
                 Costume.frames.push(...fixed.map((e) => e.r));
               })
             );
+            Part.init();
+            Sprite.parts.push(Part);
           })
         );
         Sprite.init();
@@ -381,17 +386,19 @@ class Game {
       })
     );
     spriteToTest = self.sprites[0];
-    console.log(spriteToTest);
     // const interval = setInterval(() => {
     //   this.CTX.clearRect(0, 0, 500, 500);
     //   spriteToTest.parts[1].costumes[0].next(10);
     //   spriteToTest.parts[2].costumes[0].next();
     // }, 100);
-    try {
-      spriteToTest.render();
-    } catch (error) {
-      alert(error);
-    }
+    spriteToTest.partsRef.get("leftArm").set("punch");
+    spriteToTest.partsRef.get("rightArm").set("punch");
+    spriteToTest.partsRef.get("body").set("test");
+    spriteToTest.partsRef.get("leftArm").currentCostume.next();
+    spriteToTest.partsRef.get("rightArm").currentCostume.next();
+    spriteToTest.partsRef.get("body").currentCostume.next();
+    console.log(spriteToTest);
+    spriteToTest.render();
   }
   findAnchor(colors, arr, w, h) {
     const result = [];
