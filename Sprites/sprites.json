@@ -4,13 +4,16 @@
       "name": "TMNT-R",
       "tree": {
         "name": "body",
+        "z": 0,
         "sub": [
           {
             "name": "leftArm",
+            "z": -1,
             "sub": []
           },
           {
             "name": "rightArm",
+            "z": 1,
             "sub": []
           }
         ]
@@ -23,7 +26,7 @@
             {
               "name": "test",
               "count": 1,
-              "anchors": [[223, 87, 255]]
+              "anchors": [[223, 87, 255], [31,31,31]]
             }
           ]
         },

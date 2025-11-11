@@ -169,26 +169,33 @@ class Game {
         this.initParts(this.tree);
       }
       initParts(part = this.tree) {
-        const { name, sub } = part;
+        const { name, sub, z } = part;
         let count = 0;
+        const here = this.partsRef.get(name);
+        here.z = z;
         for (const part of sub) {
           if (!part.sub) {
             count++;
             continue;
           }
-          this.partsRef.get(name).under.push(this.partsRef.get(part.name));
+          here.under.push(this.partsRef.get(part.name));
           this.initParts(part);
         }
         if (count === sub.length) return;
       }
       render() {
         const topPart = this.partsRef.get(this.tree.name);
-        topPart.render(this.x, this.y);
+        const queue = [new outSelf.PartQueueContainer(this.x, this.y, topPart.z, topPart)]
+        queue.push(...topPart.queue(this.x, this.y).flat(Infinity))
+        queue.sort((a,b) => a.z - b.z)
+        queue.forEach(e => e.render())
+        console.log(queue)
       }
     };
     this.Part = class {
       constructor(x, y, name, home) {
-        (this.x = x), (this.y = y), (this.w = null);
+        (this.x = x), (this.y = y);
+        (this.z = null), (this.w = null);
         (this.name = name), (this.home = home);
         (this.under = []), (this.costumes = []);
         (this.anchors = null), (this.pxls = null);
@@ -200,8 +207,23 @@ class Game {
       set(name) {
         this.currentCostume = this.costumeRef.get(name);
       }
-      render(xOffset = 0, yOffset = 0) {
-        console.log(this.anchors || "no anchor");
+      queue(xOffset = 0, yOffset = 0) {
+        const returnArr = [];
+        if (this.under.length > 0) {
+          this.under.forEach((e) => {
+            const [_, [oX, oY]] = this.anchors.find(([color]) => {
+              return outSelf.RGBto24bit(e.home) === outSelf.RGBto24bit(color);
+            }) || [null, [0, 0]];
+            let resultArr = e.queue();
+            resultArr = resultArr.flat(Infinity);
+            returnArr.push(...resultArr);
+            returnArr.push(new outSelf.PartQueueContainer(oX + xOffset, oY + yOffset, e.z, e))
+          });
+        }
+        // console.log(returnArr)
+        return returnArr;
+      }
+      render(xOffset, yOffset) {
         for (let i = 0; i < this.pxls.length; i++) {
           const x = (i % this.w) + xOffset - this.x;
           const y = Math.floor(i / this.w) + yOffset - this.y;
@@ -215,11 +237,6 @@ class Game {
             outSelf.CTX.fillRect(x, y, 1, 1);
           }
         }
-        if (this.under.length > 0)
-          this.under.forEach((e) => {
-            console.log(e.home);
-            e.render();
-          });
       }
     };
     this.Costume = class {
@@ -249,6 +266,17 @@ class Game {
         this.anchors = anchors;
         this.w = w;
         this.home = home;
+      }
+    };
+    this.PartQueueContainer = class {
+      constructor(xOffset, yOffset, z, part) {
+        this.xOffset = xOffset;
+        this.yOffset = yOffset;
+        this.z = z;
+        this.part = part;
+      }
+      render() {
+        this.part.render(this.xOffset, this.yOffset);
       }
     };
     this.init(LUT_SRC);
@@ -346,7 +374,7 @@ class Game {
     }
     await Promise.all(
       config.sprites.map(async ({ name, tree, parts }) => {
-        const Sprite = new self.Sprite(0, 0, name, tree);
+        const Sprite = new self.Sprite(10, 10, name, tree);
         await Promise.all(
           parts.map(async ({ name: part, home, costumes /*parent*/ }) => {
             const Part = new self.Part(null, null, part, home /*parent*/);
@@ -386,11 +414,6 @@ class Game {
       })
     );
     spriteToTest = self.sprites[0];
-    // const interval = setInterval(() => {
-    //   this.CTX.clearRect(0, 0, 500, 500);
-    //   spriteToTest.parts[1].costumes[0].next(10);
-    //   spriteToTest.parts[2].costumes[0].next();
-    // }, 100);
     spriteToTest.partsRef.get("leftArm").set("punch");
     spriteToTest.partsRef.get("rightArm").set("punch");
     spriteToTest.partsRef.get("body").set("test");
@@ -399,6 +422,16 @@ class Game {
     spriteToTest.partsRef.get("body").currentCostume.next();
     console.log(spriteToTest);
     spriteToTest.render();
+    this.CANVAS.addEventListener("mousemove", (e) => {
+      let [x,y] = [Math.round(e.clientX / 4), Math.round(e.clientY / 4)];
+      x = x - Math.round(self.CANVAS.getBoundingClientRect().x / 4);
+      y = y - Math.round(self.CANVAS.getBoundingClientRect().y / 4);
+      spriteToTest.x = x;
+      spriteToTest.y = y;
+      spriteToTest.parts.forEach((e) => e.currentCostume.next());
+      this.CTX.clearRect(0, 0, 500, 500);
+      spriteToTest.render();
+    });
   }
   findAnchor(colors, arr, w, h) {
     const result = [];
