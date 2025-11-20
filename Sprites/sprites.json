@@ -26,7 +26,20 @@
             {
               "name": "test",
               "count": 1,
-              "anchors": [[223, 87, 255], [31,31,31]]
+              "anchors": [
+                [223, 87, 255],
+                [31, 31, 31]
+              ],
+              "anchorCoords": [
+                {
+                  "xy": [0, 0],
+                  "part": "leftArm"
+                },
+                {
+                  "xy": [11, 0],
+                  "part": "rightArm"
+                }
+              ]
             }
           ]
         },
