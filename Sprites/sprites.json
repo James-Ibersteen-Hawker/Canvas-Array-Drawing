@@ -3,30 +3,31 @@
     {
       "name": "TMNT-R",
       "tree": {
-        "name": "body",
+        "name": "legsTest",
         "z": 0,
         "sub": [
           {
-            "name": "leftArm",
-            "z": -1,
-            "sub": []
-          },
-          {
-            "name": "rightArm",
-            "z": 1,
-            "sub": []
-          },
-          {
-            "name": "legsTest",
+            "name": "body",
             "z": 0,
-            "sub": []
+            "sub": [
+              {
+                "name": "leftArm",
+                "z": -1,
+                "sub": []
+              },
+              {
+                "name": "rightArm",
+                "z": 1,
+                "sub": []
+              }
+            ]
           }
         ]
       },
       "parts": [
         {
           "name": "body",
-          "home": [0, 0, 255],
+          "home": [0, 0, 156],
           "costumes": [
             {
               "name": "neutral",
@@ -63,7 +64,7 @@
         },
         {
           "name": "legsTest",
-          "home": [0, 0, 156],
+          "home": [0, 0, 255],
           "costumes": [
             {
               "name": "idle",
