@@ -185,11 +185,12 @@ class Game {
       }
       render() {
         const topPart = this.partsRef.get(this.tree.name);
-        const queue = [new outSelf.PartQueueContainer(this.x, this.y, topPart.z, topPart)]
-        queue.push(...topPart.queue(this.x, this.y).flat(Infinity))
-        queue.sort((a,b) => a.z - b.z)
-        queue.forEach(e => e.render())
-        console.log(queue)
+        const queue = [
+          new outSelf.PartQueueContainer(this.x, this.y, topPart.z, topPart),
+        ];
+        queue.push(...topPart.queue(this.x, this.y).flat(Infinity));
+        queue.sort((a, b) => a.z - b.z);
+        queue.forEach((e) => e.render());
       }
     };
     this.Part = class {
@@ -217,10 +218,11 @@ class Game {
             let resultArr = e.queue();
             resultArr = resultArr.flat(Infinity);
             returnArr.push(...resultArr);
-            returnArr.push(new outSelf.PartQueueContainer(oX + xOffset, oY + yOffset, e.z, e))
+            returnArr.push(
+              new outSelf.PartQueueContainer(oX + xOffset, oY + yOffset, e.z, e)
+            );
           });
         }
-        // console.log(returnArr)
         return returnArr;
       }
       render(xOffset, yOffset) {
@@ -376,9 +378,8 @@ class Game {
       config.sprites.map(async ({ name, tree, parts }) => {
         const Sprite = new self.Sprite(10, 10, name, tree);
         await Promise.all(
-          parts.map(async ({ name: part, home, costumes /*parent*/ }) => {
-            const Part = new self.Part(null, null, part, home /*parent*/);
-
+          parts.map(async ({ name: part, home, costumes }) => {
+            const Part = new self.Part(null, null, part, home);
             await Promise.all(
               costumes.map(async ({ name: costume, count, anchors }) => {
                 const Costume = new self.Costume(costume, count, Part);
@@ -416,14 +417,15 @@ class Game {
     spriteToTest = self.sprites[0];
     spriteToTest.partsRef.get("leftArm").set("punch");
     spriteToTest.partsRef.get("rightArm").set("punch");
-    spriteToTest.partsRef.get("body").set("test");
+    spriteToTest.partsRef.get("body").set("neutral");
+    spriteToTest.partsRef.get("legsTest").set("idle");
     spriteToTest.partsRef.get("leftArm").currentCostume.next();
     spriteToTest.partsRef.get("rightArm").currentCostume.next();
     spriteToTest.partsRef.get("body").currentCostume.next();
-    console.log(spriteToTest);
+    spriteToTest.partsRef.get("legsTest").currentCostume.next();
     spriteToTest.render();
     this.CANVAS.addEventListener("mousemove", (e) => {
-      let [x,y] = [Math.round(e.clientX / 4), Math.round(e.clientY / 4)];
+      let [x, y] = [Math.round(e.clientX / 4), Math.round(e.clientY / 4)];
       x = x - Math.round(self.CANVAS.getBoundingClientRect().x / 4);
       y = y - Math.round(self.CANVAS.getBoundingClientRect().y / 4);
       spriteToTest.x = x;
