@@ -173,22 +173,28 @@ class Game {
         let count = 0;
         const here = this.partsRef.get(name);
         here.z = z;
-        for (const part of sub) {
-          if (!part.sub) {
+        for (const sPart of sub) {
+          if (!sPart.sub) {
             count++;
             continue;
           }
-          here.under.push(this.partsRef.get(part.name));
-          this.initParts(part);
+          here.under.push(this.partsRef.get(sPart.name));
+          this.initParts(sPart);
         }
         if (count === sub.length) return;
       }
       render() {
-        const topPart = this.partsRef.get(this.tree.name);
+        const self = this;
+        self.topPart = self.partsRef.get(self.tree.name);
         const queue = [
-          new outSelf.PartQueueContainer(this.x, this.y, topPart.z, topPart),
+          new outSelf.PartQueueContainer(
+            self.x,
+            self.y,
+            self.topPart.z,
+            self.topPart
+          ),
         ];
-        queue.push(...topPart.queue(this.x, this.y).flat(Infinity));
+        queue.push(...self.topPart.queue(self.x, self.y).flat(Infinity));
         queue.sort((a, b) => a.z - b.z);
         queue.forEach((e) => e.render());
       }
@@ -212,14 +218,24 @@ class Game {
         const returnArr = [];
         if (this.under.length > 0) {
           this.under.forEach((e) => {
-            const [_, [oX, oY]] = this.anchors.find(([color]) => {
-              return outSelf.RGBto24bit(e.home) === outSelf.RGBto24bit(color);
-            }) || [null, [0, 0]];
-            let resultArr = e.queue();
+            const [_, [parentAnchorX, parentAnchorY]] = this.anchors.find(
+              ([color]) =>
+                outSelf.RGBto24bit(e.home) === outSelf.RGBto24bit(color)
+            ) || [null, [0, 0]]; //find the correct anchor on the PARENT to anchor the CHILD
+            const [childAnchorX, childAnchorY] = [e.x, e.y];
+            let resultArr = e.queue(
+              parentAnchorX + xOffset - childAnchorX,
+              parentAnchorY + yOffset - childAnchorY
+            );
             resultArr = resultArr.flat(Infinity);
             returnArr.push(...resultArr);
             returnArr.push(
-              new outSelf.PartQueueContainer(oX + xOffset, oY + yOffset, e.z, e)
+              new outSelf.PartQueueContainer(
+                parentAnchorX + xOffset,
+                parentAnchorY + yOffset,
+                e.z,
+                e
+              )
             );
           });
         }
@@ -376,10 +392,10 @@ class Game {
     }
     await Promise.all(
       config.sprites.map(async ({ name, tree, parts }) => {
-        const Sprite = new self.Sprite(10, 10, name, tree);
+        const Sprite = new self.Sprite(20, 20, name, tree);
         await Promise.all(
           parts.map(async ({ name: part, home, costumes }) => {
-            const Part = new self.Part(null, null, part, home);
+            const Part = new self.Part(0, 0, part, home);
             await Promise.all(
               costumes.map(async ({ name: costume, count, anchors }) => {
                 const Costume = new self.Costume(costume, count, Part);
@@ -424,6 +440,7 @@ class Game {
     spriteToTest.partsRef.get("body").currentCostume.next();
     spriteToTest.partsRef.get("legsTest").currentCostume.next();
     spriteToTest.render();
+    console.log(spriteToTest);
     this.CANVAS.addEventListener("mousemove", (e) => {
       let [x, y] = [Math.round(e.clientX / 4), Math.round(e.clientY / 4)];
       x = x - Math.round(self.CANVAS.getBoundingClientRect().x / 4);
