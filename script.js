@@ -444,12 +444,21 @@ class Game {
     spriteToTest.partsRef.get("head").currentCostume.next();
     spriteToTest.render();
     console.log(spriteToTest);
-    this.CANVAS.addEventListener("mousemove", (e) => {
-      let [x, y] = [Math.round(e.clientX / 4), Math.round(e.clientY / 4)];
-      x = x - Math.round(self.CANVAS.getBoundingClientRect().x / 4);
-      y = y - Math.round(self.CANVAS.getBoundingClientRect().y / 4);
-      spriteToTest.x = x;
-      spriteToTest.y = y;
+    window.addEventListener("keydown", (e) => {
+      switch (e.key) {
+        case "ArrowUp":
+          spriteToTest.y--;
+          break;
+        case "ArrowLeft":
+          spriteToTest.x--;
+          break;
+        case "ArrowDown":
+          spriteToTest.y++;
+          break;
+        case "ArrowRight":
+          spriteToTest.x++;
+          break;
+      }
       spriteToTest.parts.forEach((e) => e.currentCostume.next());
       this.CTX.clearRect(0, 0, 500, 500);
       spriteToTest.render();
