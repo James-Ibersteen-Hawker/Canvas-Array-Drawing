@@ -53,7 +53,7 @@
           "costumes": [
             {
               "name": "punch",
-              "count": 1,
+              "count": 8,
               "anchors": [[223, 87, 255]]
             }
           ]
@@ -64,7 +64,7 @@
           "costumes": [
             {
               "name": "punch",
-              "count": 1,
+              "count": 8,
               "anchors": [[31, 31, 31]]
             }
           ]
