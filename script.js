@@ -3,9 +3,10 @@ let spriteToTest;
 class Game {
   LUT_SRC;
   CANVAS;
-  constructor(LUT_SRC, CANVAS) {
+  constructor(LUT_SRC, CANVAS, SPRITEJSON) {
     const outSelf = this;
     this.COLORTREE;
+    this.SPRITEJSON = SPRITEJSON;
     this.sprites = [];
     this.alpha = [];
     this.alphaKey;
@@ -300,8 +301,7 @@ class Game {
     this.init(LUT_SRC);
   }
   async init(LUT) {
-    this.config = await (await fetch("/Sprites/sprites.json")).text();
-    this.config = JSON.parse(this.config);
+    this.config = await (await fetch(this.SPRITEJSON)).json();
     this.alpha = this.config.alpha;
     await this.LUT_init(LUT);
     this.CTX.imageSmoothingEnabled = false;
@@ -330,15 +330,12 @@ class Game {
     const data = inCTX.getImageData(0, 0, w, h).data;
     inCTX.clearRect(0, 0, w, h);
     for (let i = 0, incr = 0; i < data.length; i += 4, incr++) {
-      let r = data[i];
-      let g = data[i + 1];
-      let b = data[i + 2];
-      let a = data[i + 3];
-      const color = [r, g, b];
-      let result;
-      if (a === 255)
-        result = context.RGBto24bit(context.COLORTREE.search(color));
-      else result = context.RGBto24bit(context.alpha);
+      const a = data[i + 3];
+      const color = data.slice(i, i + 4);
+      let result =
+        a === 255
+          ? context.RGBto24bit(context.COLORTREE.search(color))
+          : context.RGBto24bit(context.alpha);
       const finalColor = context.LUT_LUT.get(result);
       output[incr] = finalColor;
     }
