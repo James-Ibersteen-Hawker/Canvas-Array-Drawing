@@ -75,7 +75,7 @@
           "costumes": [
             {
               "name": "idle",
-              "count": 6,
+              "count": 7,
               "anchors": [[0, 0, 156]]
             }
           ]
