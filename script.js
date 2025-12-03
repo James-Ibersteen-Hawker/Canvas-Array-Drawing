@@ -461,6 +461,7 @@ class Game {
     });
   }
   findAnchor(colors, arr, w, h) {
+    if (h === null) return [result, [0, 0]];
     const result = [];
     let homeFound = null;
     const self = this;

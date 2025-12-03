@@ -27,7 +27,12 @@
               },
               {
                 "name": "leftLeg",
-                "z": 1,
+                "z": -1,
+                "sub": []
+              },
+              {
+                "name": "shell",
+                "z": -1,
                 "sub": []
               }
             ]
@@ -37,73 +42,85 @@
       "parts": [
         {
           "name": "body",
-          "home": [0, 0, 156],
+          "home": [68, 29, 24],
           "costumes": [
             {
               "name": "idle",
               "count": 1,
               "anchors": [
-                [223, 87, 255],
-                [31, 31, 31],
-                [0, 0, 156],
-                [45, 45, 45],
-                [52, 52, 52]
+                [68, 29, 24],
+                [26, 8, 0],
+                [52, 77, 0],
+                [112, 172, 80],
+                [91, 138, 51],
+                [79, 42, 0]
               ]
             }
           ]
         },
         {
           "name": "leftArm",
-          "home": [223, 87, 255],
+          "home": [52, 77, 0],
           "costumes": [
             {
               "name": "punch",
               "count": 8,
-              "anchors": [[223, 87, 255]]
+              "anchors": [[52, 77, 0]]
             }
           ]
         },
         {
           "name": "rightArm",
-          "home": [31, 31, 31],
+          "home": [112, 172, 80],
           "costumes": [
             {
               "name": "punch",
               "count": 8,
-              "anchors": [[31, 31, 31]]
+              "anchors": [[112, 172, 80]]
             }
           ]
         },
         {
           "name": "rightLeg",
-          "home": [0, 0, 255],
+          "home": [null],
           "costumes": [
             {
               "name": "idle",
               "count": 7,
-              "anchors": [[0, 0, 156]]
+              "anchors": [[68, 29, 24]]
             }
           ]
         },
         {
           "name": "leftLeg",
-          "home": [0, 0, 255],
+          "home": [26, 8, 0],
           "costumes": [
             {
               "name": "idle",
               "count": 7,
-              "anchors": [[0, 0, 156]]
+              "anchors": [[26, 8, 0]]
             }
           ]
         },
         {
           "name": "head",
-          "home": [45, 45, 45],
+          "home": [91, 138, 51],
           "costumes": [
             {
               "name": "idle",
               "count": 6,
-              "anchors": [[45, 45, 45]]
+              "anchors": [[91, 138, 51]]
+            }
+          ]
+        },
+        {
+          "name": "shell",
+          "home": [79, 42, 0],
+          "costumes": [
+            {
+              "name": "idle",
+              "count": 1,
+              "anchors": [[79, 42, 0]]
             }
           ]
         }
