@@ -431,7 +431,7 @@ class Game {
 
     spriteToTest.partsRef.get("leftArm").set("punch");
     spriteToTest.partsRef.get("rightArm").set("punch");
-    spriteToTest.partsRef.get("body").set("neutral");
+    spriteToTest.partsRef.get("body").set("idle");
     spriteToTest.partsRef.get("legs").set("idle");
     spriteToTest.partsRef.get("head").set("idle");
     spriteToTest.partsRef.get("leftArm").currentCostume.next();

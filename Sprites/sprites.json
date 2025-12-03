@@ -35,7 +35,7 @@
           "home": [0, 0, 156],
           "costumes": [
             {
-              "name": "neutral",
+              "name": "idle",
               "count": 1,
               "anchors": [
                 [223, 87, 255],
@@ -91,7 +91,8 @@
             }
           ]
         }
-      ]
+      ],
+      "presets": []
     }
   ],
   "alpha": [0, 0, 219]
