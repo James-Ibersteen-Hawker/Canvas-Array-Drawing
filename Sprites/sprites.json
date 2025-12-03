@@ -3,7 +3,7 @@
     {
       "name": "TMNT-R",
       "tree": {
-        "name": "legs",
+        "name": "rightLeg",
         "z": 0,
         "sub": [
           {
@@ -22,6 +22,11 @@
               },
               {
                 "name": "head",
+                "z": 1,
+                "sub": []
+              },
+              {
+                "name": "leftLeg",
                 "z": 1,
                 "sub": []
               }
@@ -70,7 +75,18 @@
           ]
         },
         {
-          "name": "legs",
+          "name": "rightLeg",
+          "home": [0, 0, 255],
+          "costumes": [
+            {
+              "name": "idle",
+              "count": 7,
+              "anchors": [[0, 0, 156]]
+            }
+          ]
+        },
+        {
+          "name": "leftLeg",
           "home": [0, 0, 255],
           "costumes": [
             {

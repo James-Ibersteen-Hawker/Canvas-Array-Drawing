@@ -7,7 +7,8 @@
         position: absolute;
         left: 50%;
         top: 50%;
-        transform: translate(-50%, -50%) scale(400%);
+        transform: translate(-50%, -50%) scale(700%);
+        z-index: -1;
       }
       html,
       body {
@@ -15,6 +16,9 @@
         height: 100%;
         padding: 0;
         margin: 0;
+      }
+      .colorSwatch {
+        width: 120px;
       }
     </style>
   </head>
@@ -27,8 +31,8 @@
       >unsupported</canvas
     >
     <div id="temp-display"></div>
-    <!-- <script src="script.js"></script>
-    <script src="init.js"></script> -->
-    <script src="colorfilter.js"></script>
+    <script src="script.js"></script>
+    <script src="init.js"></script>
+    <!-- <script src="colorfilter.js"></script> -->
   </body>
 </html>

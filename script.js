@@ -428,16 +428,15 @@ class Game {
       })
     );
     spriteToTest = self.sprites[0];
-
     spriteToTest.partsRef.get("leftArm").set("punch");
     spriteToTest.partsRef.get("rightArm").set("punch");
     spriteToTest.partsRef.get("body").set("idle");
-    spriteToTest.partsRef.get("legs").set("idle");
+    spriteToTest.partsRef.get("rightLeg").set("idle");
     spriteToTest.partsRef.get("head").set("idle");
     spriteToTest.partsRef.get("leftArm").currentCostume.next();
     spriteToTest.partsRef.get("rightArm").currentCostume.next();
     spriteToTest.partsRef.get("body").currentCostume.next();
-    spriteToTest.partsRef.get("legs").currentCostume.next();
+    spriteToTest.partsRef.get("rightLeg").currentCostume.next();
     spriteToTest.partsRef.get("head").currentCostume.next();
     spriteToTest.render();
     console.log(spriteToTest);

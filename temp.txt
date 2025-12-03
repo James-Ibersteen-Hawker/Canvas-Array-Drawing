@@ -1,1 +1,2 @@
-leg anchor is now [52,77,0]
+darkgreen anchor is now [52,77,0]
+darkbrown anchor is now [68,29,24]
