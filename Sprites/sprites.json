@@ -60,23 +60,23 @@
         },
         {
           "name": "leftArm",
-          "home": [52, 77, 0],
-          "costumes": [
-            {
-              "name": "punch",
-              "count": 8,
-              "anchors": [[52, 77, 0]]
-            }
-          ]
-        },
-        {
-          "name": "rightArm",
           "home": [112, 172, 80],
           "costumes": [
             {
               "name": "punch",
               "count": 8,
               "anchors": [[112, 172, 80]]
+            }
+          ]
+        },
+        {
+          "name": "rightArm",
+          "home": [52, 77, 0],
+          "costumes": [
+            {
+              "name": "punch",
+              "count": 8,
+              "anchors": [[52, 77, 0]]
             }
           ]
         },

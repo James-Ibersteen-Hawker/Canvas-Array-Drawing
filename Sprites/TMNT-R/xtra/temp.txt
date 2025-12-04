@@ -1,0 +1,14 @@
+darkgreen anchor is now [52,77,0]
+
+//set anchors
+rightLeg anchor is now [68,29,24]
+leftLeg anchor is now [26,8,0]
+rightArm anchor is now [52,77,0] !!!!!!!
+leftArm anchor is now [112,172,80] !!!!!!!
+head anchor is now [91,138,51]
+shell anchor is now [79,42,0]
+
+
+leftLegIdle, rightLegIdle, bodyIdle, headIdle, leftArmPunch, rightArmPunch are done
+
+to do: rightArm, leftArm, shell
