@@ -9,29 +9,6 @@ head anchor is now [91,138,51]
 shell anchor is now [79,42,0]
 
 
-leftLegIdle, rightLegIdle, bodyIdle, headIdle, leftArmPunch, rightArmPunch are done
+leftLegIdle, rightLegIdle, bodyIdle, headIdle, leftArmPunch, rightArmPunch, shellIdle are done
 
-to do: rightArm, leftArm, shell
-
-
-
-
-,
-{
-"name": "shell",
-"z": -1,
-"sub": []
-}
-
-,
-        {
-          "name": "shell",
-          "home": [79, 42, 0],
-          "costumes": [
-            {
-              "name": "idle",
-              "count": 1,
-              "anchors": [[79, 42, 0]]
-            }
-          ]
-        }
+to do: rightArm, leftArm, 

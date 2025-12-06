@@ -429,6 +429,7 @@ class Game {
     );
     spriteToTest = self.sprites[0];
     spriteToTest.partsRef.get("leftArm").set("punch");
+    spriteToTest.partsRef.get("shell").set("idle");
     spriteToTest.partsRef.get("rightArm").set("punch");
     spriteToTest.partsRef.get("body").set("idle");
     spriteToTest.partsRef.get("rightLeg").set("idle");
@@ -440,6 +441,7 @@ class Game {
     spriteToTest.partsRef.get("rightLeg").currentCostume.next();
     spriteToTest.partsRef.get("leftLeg").currentCostume.next();
     spriteToTest.partsRef.get("head").currentCostume.next();
+    spriteToTest.partsRef.get("shell").currentCostume.next();
     spriteToTest.render();
     console.log(spriteToTest);
     window.addEventListener("keydown", (e) => {
