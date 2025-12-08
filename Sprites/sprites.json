@@ -77,6 +77,11 @@
               "name": "punch",
               "count": 8,
               "anchors": [[52, 77, 0]]
+            },
+            {
+              "name": "idle",
+              "count": 8,
+              "anchors": [[52, 77, 0]]
             }
           ]
         },

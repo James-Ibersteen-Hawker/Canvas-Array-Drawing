@@ -430,7 +430,7 @@ class Game {
     spriteToTest = self.sprites[0];
     spriteToTest.partsRef.get("leftArm").set("punch");
     spriteToTest.partsRef.get("shell").set("idle");
-    spriteToTest.partsRef.get("rightArm").set("punch");
+    spriteToTest.partsRef.get("rightArm").set("idle");
     spriteToTest.partsRef.get("body").set("idle");
     spriteToTest.partsRef.get("rightLeg").set("idle");
     spriteToTest.partsRef.get("leftLeg").set("idle");
