@@ -13,3 +13,11 @@ to do: leftArm,
 
 
 maybe interpolate rightArmIdle frames better
+
+
+
+renderer:
+ - scalable chunk size for optimisation / precision
+ - I need a Display and a Buffer
+ - Buffer is the previous frame, used to check against current frame
+ - Display is the current frame

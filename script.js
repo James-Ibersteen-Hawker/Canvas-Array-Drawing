@@ -197,7 +197,8 @@ class Game {
         ];
         queue.push(...self.topPart.queue(self.x, self.y).flat(Infinity));
         queue.sort((a, b) => a.z - b.z);
-        queue.forEach((e) => e.render());
+        // queue.forEach((e) => e.render());
+        return queue;
       }
     };
     this.Part = class {
@@ -296,6 +297,23 @@ class Game {
       }
       render() {
         this.part.render(this.xOffset, this.yOffset);
+      }
+    };
+    const { clientWidth: cW, clientHeight: cH } = this.CANVAS;
+    this.DisplayScreen = {
+      width: cW,
+      height: cH,
+      output: new Uint8Array(cW * cH),
+      chunks: [],
+      extractRange(sX, sY, w, h) {},
+    };
+    this.Chunk = class {
+      constructor(startX, startY, w, h) {
+        this.startX = startX;
+        this.startY = startY;
+        this.w = w;
+        this.h = h;
+        this.dirty = false;
       }
     };
     this.init(LUT_SRC);
@@ -442,8 +460,6 @@ class Game {
     spriteToTest.partsRef.get("leftLeg").currentCostume.next();
     spriteToTest.partsRef.get("head").currentCostume.next();
     spriteToTest.partsRef.get("shell").currentCostume.next();
-    spriteToTest.render();
-    console.log(spriteToTest);
     window.addEventListener("keydown", (e) => {
       e.preventDefault();
       switch (e.key) {
@@ -462,7 +478,8 @@ class Game {
       }
       spriteToTest.parts.forEach((e) => e.currentCostume.next());
       this.CTX.clearRect(0, 0, 500, 500);
-      spriteToTest.render();
+      const spriteOutput = spriteToTest.render();
+      alert(spriteOutput);
     });
   }
   findAnchor(colors, arr, w, h) {
@@ -488,4 +505,5 @@ class Game {
     return (r << 16) | (g << 8) | b;
   }
   async play() {}
+  async render() {}
 }
