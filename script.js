@@ -9,6 +9,7 @@ class Game {
     this.SPRITEJSON = SPRITEJSON;
     this.sprites = [];
     this.alpha = [];
+    this.alphaColor = null;
     this.alphaKey;
     this.config = null;
     (this.LUT = []), (this.LUT_LUT = []);
@@ -223,7 +224,7 @@ class Game {
             const [_, [parentAnchorX, parentAnchorY]] = this.anchors.find(
               ([color]) =>
                 outSelf.RGBto24bit(e.home) === outSelf.RGBto24bit(color)
-            ) || [null, [0, 0]]; //find the correct anchor on the PARENT to anchor the CHILD
+            ) || [null, [0, 0]];
             const [childAnchorX, childAnchorY] = [e.x, e.y];
             let resultArr = e.queue(
               parentAnchorX + xOffset - childAnchorX,
@@ -233,8 +234,8 @@ class Game {
             returnArr.push(...resultArr);
             returnArr.push(
               new outSelf.PartQueueContainer(
-                parentAnchorX + xOffset,
-                parentAnchorY + yOffset,
+                parentAnchorX + xOffset - e.x,
+                parentAnchorY + yOffset - e.y,
                 e.z,
                 e
               )
@@ -243,21 +244,21 @@ class Game {
         }
         return returnArr;
       }
-      render(xOffset, yOffset) {
-        for (let i = 0; i < this.pxls.length; i++) {
-          const x = (i % this.w) + xOffset - this.x;
-          const y = Math.floor(i / this.w) + yOffset - this.y;
-          if (
-            outSelf.RGBto24bit(outSelf.LUT[this.pxls[i]]) !==
-            outSelf.RGBto24bit(outSelf.alpha)
-          ) {
-            outSelf.CTX.fillStyle = `rgb(${outSelf.LUT[this.pxls[i]].join(
-              ","
-            )})`;
-            outSelf.CTX.fillRect(x, y, 1, 1);
-          }
-        }
-      }
+      // render(xOffset, yOffset) {
+      //   for (let i = 0; i < this.pxls.length; i++) {
+      //     const x = (i % this.w) + xOffset - this.x;
+      //     const y = Math.floor(i / this.w) + yOffset - this.y;
+      //     if (
+      //       outSelf.RGBto24bit(outSelf.LUT[this.pxls[i]]) !==
+      //       outSelf.RGBto24bit(outSelf.alpha)
+      //     ) {
+      //       outSelf.CTX.fillStyle = `rgb(${outSelf.LUT[this.pxls[i]].join(
+      //         ","
+      //       )})`;
+      //       outSelf.CTX.fillRect(x, y, 1, 1);
+      //     }
+      //   }
+      // }
     };
     this.Costume = class {
       constructor(name, count, parent) {
@@ -296,16 +297,39 @@ class Game {
         this.part = part;
       }
       render() {
-        this.part.render(this.xOffset, this.yOffset);
+        // this.part.render(this.xOffset, this.yOffset);
       }
     };
-    const { clientWidth: cW, clientHeight: cH } = this.CANVAS;
+    this.CW = this.CANVAS.clientWidth;
+    this.CH = this.CANVAS.clientHeight;
     this.DisplayScreen = {
-      width: cW,
-      height: cH,
-      output: new Uint8Array(cW * cH),
+      width: outSelf.CW,
+      height: outSelf.CH,
+      output: new Uint8Array(outSelf.CW * outSelf.CH).fill(),
       chunks: [],
       extractRange(sX, sY, w, h) {},
+      overlay(pxlArr, arrW, arrX, arrY) {
+        const W = this.width;
+        for (let i = 0; i < pxlArr.length; i++) {
+          const X = (i % arrW) + arrX;
+          const Y = Math.floor(i / arrW) + arrY;
+          const index = Y * W + X;
+          if (pxlArr[i] === outSelf.alphaColor) continue;
+          this.output[index] = pxlArr[i];
+        }
+      },
+      render() {
+        for (let i = 0; i < this.output.length; i++) {
+          const x = i % this.width;
+          const y = Math.floor(i / this.width);
+          const fillStyle = outSelf.LUT[this.output[i]];
+          if (this.output[i] === outSelf.alphaColor) continue;
+          outSelf.CTX.fillStyle = `rgb(${fillStyle.join(",")})`;
+          outSelf.CTX.fillRect(x, y, 1, 1);
+          outSelf.CTX.stroke();
+          this.output[i] = outSelf.alphaColor;
+        }
+      },
     };
     this.Chunk = class {
       constructor(startX, startY, w, h) {
@@ -314,6 +338,10 @@ class Game {
         this.w = w;
         this.h = h;
         this.dirty = false;
+        this.init();
+      }
+      init() {
+        //compute chunk range
       }
     };
     this.init(LUT_SRC);
@@ -322,8 +350,22 @@ class Game {
     this.config = await (await fetch(this.SPRITEJSON)).json();
     this.alpha = this.config.alpha;
     await this.LUT_init(LUT);
+    this.alphaColor = this.LUT.findIndex(
+      (e) => this.RGBto24bit(e) === this.RGBto24bit(this.alpha)
+    );
     this.CTX.imageSmoothingEnabled = false;
     this.COLORTREE = new this.Octree(this.LUT);
+    const chunkW = 8;
+    const chunkH = 8;
+    const chunksX = Math.ceil(this.DisplayScreen.width / chunkW);
+    const chunksY = Math.ceil(this.DisplayScreen.height / chunkH);
+    this.DisplayScreen.output.fill(this.alphaColor);
+    for (let i = 0; i < chunksX * chunksY; i++) {
+      const startX = null;
+      const startY = null;
+      const chunk = new this.Chunk(startX, startY, chunkW, chunkH);
+      this.DisplayScreen.chunks.push(chunk);
+    }
     await this.SpritesInit();
   }
   async LUT_init(LUT) {
@@ -448,7 +490,7 @@ class Game {
     spriteToTest = self.sprites[0];
     spriteToTest.partsRef.get("leftArm").set("punch");
     spriteToTest.partsRef.get("shell").set("idle");
-    spriteToTest.partsRef.get("rightArm").set("idle");
+    spriteToTest.partsRef.get("rightArm").set("punch");
     spriteToTest.partsRef.get("body").set("idle");
     spriteToTest.partsRef.get("rightLeg").set("idle");
     spriteToTest.partsRef.get("leftLeg").set("idle");
@@ -461,7 +503,6 @@ class Game {
     spriteToTest.partsRef.get("head").currentCostume.next();
     spriteToTest.partsRef.get("shell").currentCostume.next();
     window.addEventListener("keydown", (e) => {
-      e.preventDefault();
       switch (e.key) {
         case "ArrowUp":
           spriteToTest.y--;
@@ -479,7 +520,13 @@ class Game {
       spriteToTest.parts.forEach((e) => e.currentCostume.next());
       this.CTX.clearRect(0, 0, 500, 500);
       const spriteOutput = spriteToTest.render();
-      alert(spriteOutput);
+      spriteOutput.forEach((e) => {
+        const part = e.part;
+        const { pxls, w } =
+          part.currentCostume.frames[part.currentCostume.index];
+        self.DisplayScreen.overlay(pxls, w, e.xOffset, e.yOffset);
+      });
+      self.DisplayScreen.render();
     });
   }
   findAnchor(colors, arr, w, h) {
