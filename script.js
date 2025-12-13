@@ -198,7 +198,6 @@ class Game {
         ];
         queue.push(...self.topPart.queue(self.x, self.y).flat(Infinity));
         queue.sort((a, b) => a.z - b.z);
-        // queue.forEach((e) => e.render());
         return queue;
       }
     };
@@ -244,21 +243,6 @@ class Game {
         }
         return returnArr;
       }
-      // render(xOffset, yOffset) {
-      //   for (let i = 0; i < this.pxls.length; i++) {
-      //     const x = (i % this.w) + xOffset - this.x;
-      //     const y = Math.floor(i / this.w) + yOffset - this.y;
-      //     if (
-      //       outSelf.RGBto24bit(outSelf.LUT[this.pxls[i]]) !==
-      //       outSelf.RGBto24bit(outSelf.alpha)
-      //     ) {
-      //       outSelf.CTX.fillStyle = `rgb(${outSelf.LUT[this.pxls[i]].join(
-      //         ","
-      //       )})`;
-      //       outSelf.CTX.fillRect(x, y, 1, 1);
-      //     }
-      //   }
-      // }
     };
     this.Costume = class {
       constructor(name, count, parent) {
@@ -296,18 +280,16 @@ class Game {
         this.z = z;
         this.part = part;
       }
-      render() {
-        // this.part.render(this.xOffset, this.yOffset);
-      }
     };
     this.CW = this.CANVAS.clientWidth;
     this.CH = this.CANVAS.clientHeight;
     this.DisplayScreen = {
       width: outSelf.CW,
       height: outSelf.CH,
+      chunkW: 8,
+      chunkH: 8,
       output: new Uint8Array(outSelf.CW * outSelf.CH).fill(),
       chunks: [],
-      extractRange(sX, sY, w, h) {},
       overlay(pxlArr, arrW, arrX, arrY) {
         const W = this.width;
         for (let i = 0; i < pxlArr.length; i++) {
@@ -316,6 +298,9 @@ class Game {
           const index = Y * W + X;
           if (pxlArr[i] === outSelf.alphaColor) continue;
           this.output[index] = pxlArr[i];
+          const chunkX = X / this.chunkW;
+          const chunkY = Y / this.chunkH;
+
         }
       },
       render() {
@@ -350,23 +335,31 @@ class Game {
     this.config = await (await fetch(this.SPRITEJSON)).json();
     this.alpha = this.config.alpha;
     await this.LUT_init(LUT);
-    this.alphaColor = this.LUT.findIndex(
-      (e) => this.RGBto24bit(e) === this.RGBto24bit(this.alpha)
-    );
+    const { RGBto24bit: toNum, DisplayScreen: screen } = this;
+    this.alphaColor = this.LUT.findIndex((e) => toNum(e) === toNum(this.alpha));
     this.CTX.imageSmoothingEnabled = false;
     this.COLORTREE = new this.Octree(this.LUT);
-    const chunkW = 8;
-    const chunkH = 8;
-    const chunksX = Math.ceil(this.DisplayScreen.width / chunkW);
-    const chunksY = Math.ceil(this.DisplayScreen.height / chunkH);
-    this.DisplayScreen.output.fill(this.alphaColor);
-    for (let i = 0; i < chunksX * chunksY; i++) {
-      const startX = null;
-      const startY = null;
-      const chunk = new this.Chunk(startX, startY, chunkW, chunkH);
-      this.DisplayScreen.chunks.push(chunk);
+    const { chunkW, chunkH, output, width, height } = screen;
+    const chunksX = Math.ceil(width / chunkW);
+    const chunksY = Math.ceil(height / chunkH);
+    output.fill(this.alphaColor);
+    for (let x = 0; x < chunksX; x++) {
+      for (let y = 0; y < chunksY; y++) {
+        const startX = chunkW * x;
+        const startY = chunkH * y;
+        const w = Math.min(chunkW, width - startX);
+        const h = Math.min(chunkH, height - startY);
+        const chunk = new this.Chunk(startX, startY, w, h);
+        this.DisplayScreen.chunks.push(chunk);
+      }
     }
-    await this.SpritesInit();
+    this.DisplayScreen.chunks.sort((a, b) => {
+      const {startX: sXA, startY: sYA, w: wA, h: hA} = a;
+      const {startX: sXB, startY: sYB, w: wB, h: hB} = b;
+      
+      //y * w + x
+    });
+    this.SpritesInit();
   }
   async LUT_init(LUT) {
     const text = await (await fetch(LUT)).text();

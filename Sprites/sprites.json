@@ -4,7 +4,7 @@
       "name": "TMNT-R",
       "tree": {
         "name": "rightLeg",
-        "z": 1,
+        "z": -1,
         "sub": [
           {
             "name": "body",
@@ -64,7 +64,7 @@
           "costumes": [
             {
               "name": "punch",
-              "count": 8,
+              "count": 1,
               "anchors": [[112, 172, 80]]
             }
           ]
@@ -75,7 +75,7 @@
           "costumes": [
             {
               "name": "punch",
-              "count": 8,
+              "count": 1,
               "anchors": [[52, 77, 0]]
             },
             {
