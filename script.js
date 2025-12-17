@@ -293,70 +293,57 @@ class Game {
       output: new Uint8Array(outSelf.CW * outSelf.CH).fill(),
       comparison: new Uint8Array(outSelf.CW * outSelf.CH).fill(),
       chunks: [],
-      // overlay(pxlArr, arrW, arrX, arrY) {
-      //   const W = this.width;
-      //   for (let i = 0; i < pxlArr.length; i++) {
-      //     const X = (i % arrW) + arrX;
-      //     const Y = Math.floor(i / arrW) + arrY;
-      //     const index = outSelf.xy2x(X, Y, W);
-      //     if (
-      //       this.comparison[index] === pxlArr[i] ||
-      //       pxlArr[i] === outSelf.alphaColor
-      //     )
-      //       continue;
-      //     this.input[index] = pxlArr[i];
-      //     // const chunkX = X / this.chunkW;
-      //     // const chunkY = Y / this.chunkH;
-      //     // const chunkIndex = Math.floor(
-      //     //   outSelf.xy2x(chunkX, chunkY, this.chunksX)
-      //     // );
-      //     // if (!this.chunks[chunkIndex].dirty)
-      //     //   this.chunks[chunkIndex].dirty = true;
-      //   }
-      // },
-      // render() {
-      //   const alteredChunks = this.chunks.filter((e) => e.dirty);
-      //   this.output.forEach((e, i) => (this.comparison[i] = e));
-      //   for (let i = 0; i < alteredChunks.length; i++) {
-      //     //render per chunk here
-      //     const chunk = alteredChunks[i];
-      //     const { startX, startY, w, h } = chunk;
-      //     // const x = i % this.width;
-      //     // const y = Math.floor(i / this.width);
-      //     // const fillStyle = outSelf.LUT[this.output[i]];
-      //     // if (this.output[i] === outSelf.alphaColor) continue;
-      //     // outSelf.CTX.fillStyle = `rgb(${fillStyle.join(",")})`;
-      //     // outSelf.CTX.fillRect(x, y, 1, 1);
-      //     // outSelf.CTX.stroke();
-      //     // this.output[i] = outSelf.alphaColor;
-      //   }
-      //   for (let i = 0; i < this.output.length; i++) {
-      //     const x = i % this.width;
-      //     const y = Math.floor(i / this.width);
-      //     const fillStyle = outSelf.LUT[this.output[i]];
-      //     if (this.output[i] === outSelf.alphaColor) continue;
-      //     outSelf.CTX.fillStyle = `rgb(${fillStyle.join(",")})`;
-      //     outSelf.CTX.fillRect(x, y, 1, 1);
-      //     outSelf.CTX.stroke();
-      //     this.output[i] = outSelf.alphaColor;
-      //   }
-      //   alteredChunks.forEach((e) => (e.dirty = false));
-      // },
-      //gotta fix and update rendering
+      noWriteIndex: new Uint8Array(outSelf.CW * outSelf.CH).fill(0),
+      imgData: null,
+      imgBuffer: null,
       overlay(pxlArr, arrW, arrX, arrY) {
         const W = this.width;
         const nonprint = outSelf.alphaColor;
+        let X = arrX - 1;
+        let Y = arrY - 1;
         for (let i = 0; i < pxlArr.length; i++) {
-          if (output[i] !== nonprint) continue; //printable spot
+          X++;
+          if (X === arrX + arrW) (X = arrX), Y++;
           if (pxlArr[i] === nonprint) continue; //no use printing alpha onto alpha
-          const X = (i % arrW) + arrX;
-          const Y = Math.floor(i / arrW) + arrY;
-          const index = outSelf.xy2x(X, Y, W);
-          //color is printable, now prevcheck
+          const index = Y * W + X;
+          if (this.output[index] !== nonprint) continue; //printable spot
+          if (this.noWriteIndex[index] === 1) continue;
           const input = pxlArr[i];
-          const comparison = this.comparison[i];
-          const output = input === comparison ? nonprint : input;
-          if (output === nonprint) continue; //no use printing alpha onto alpha
+          const comparison = this.comparison[index];
+          const colorOutput = input === comparison ? nonprint : input;
+          if (colorOutput === nonprint) this.noWriteIndex[index] = 1;
+          this.comparison[index] = input;
+          this.output[index] = colorOutput;
+        }
+      },
+      render() {
+        for (let i = 0; i < this.output.length; i++) {
+          const X = i % this.width;
+          const Y = Math.floor(i / this.width);
+          if (this.output[i] === outSelf.alphaColor) continue;
+          const color = outSelf.LUT[this.output[i]];
+          outSelf.CTX.fillStyle = `rgb(${color.join(",")})`;
+          outSelf.CTX.fillRect(X, Y, 1, 1);
+          outSelf.CTX.stroke();
+          this.output[i] = outSelf.alphaColor;
+        }
+        this.noWriteIndex.fill(0);
+      },
+      init() {
+        const { chunkW, chunkH, width, height, output, comparison } = this;
+        [output, comparison].forEach((e) => e.fill(outSelf.alphaColor));
+        this.imgData = outSelf.CTX.createImageData(this.width, this.height);
+        this.imgBuffer = this.imgData.data;
+        this.chunksX = Math.ceil(width / chunkW);
+        this.chunksY = Math.ceil(height / chunkH);
+        for (let y = 0; y < this.chunksY; y++) {
+          for (let x = 0; x < this.chunksX; x++) {
+            const [startX, startY] = [chunkW * x, chunkH * y];
+            const w = Math.min(chunkW, width - startX);
+            const h = Math.min(chunkH, height - startY);
+            const chunk = new outSelf.Chunk(startX, startY, w, h);
+            this.chunks.push(chunk);
+          }
         }
       },
     };
@@ -385,23 +372,11 @@ class Game {
     this.config = await (await fetch(this.SPRITEJSON)).json();
     this.alpha = this.config.alpha;
     await this.LUT_init(LUT);
-    const { RGBto24bit: toNum, DisplayScreen: screen } = this;
+    const { RGBto24bit: toNum } = this;
     this.alphaColor = this.LUT.findIndex((e) => toNum(e) === toNum(this.alpha));
     this.CTX.imageSmoothingEnabled = false;
     this.COLORTREE = new this.Octree(this.LUT);
-    const { chunkW, chunkH, output, width, height, comparison } = screen;
-    screen.chunksX = Math.ceil(width / chunkW);
-    screen.chunksY = Math.ceil(height / chunkH);
-    [output, comparison].forEach((e) => e.fill(this.alphaColor));
-    for (let y = 0; y < screen.chunksY; y++) {
-      for (let x = 0; x < screen.chunksX; x++) {
-        const [startX, startY] = [chunkW * x, chunkH * y];
-        const w = Math.min(chunkW, width - startX);
-        const h = Math.min(chunkH, height - startY);
-        const chunk = new this.Chunk(startX, startY, w, h);
-        this.DisplayScreen.chunks.push(chunk);
-      }
-    }
+    this.DisplayScreen.init();
     this.SpritesInit();
   }
   async LUT_init(LUT) {
@@ -554,7 +529,6 @@ class Game {
           break;
       }
       spriteToTest.parts.forEach((e) => e.currentCostume.next());
-      this.CTX.clearRect(0, 0, 500, 500);
       try {
         const spriteOutput = spriteToTest.render().reverse();
         spriteOutput.forEach((e) => {
@@ -563,6 +537,8 @@ class Game {
             part.currentCostume.frames[part.currentCostume.index];
           self.DisplayScreen.overlay(pxls, w, e.xOffset, e.yOffset);
         });
+        self.DisplayScreen.overlay(new Uint8Array(50 * 50).fill(212), 50, 8, 0);
+        //pretty pink @ 213
         self.DisplayScreen.render();
       } catch (error) {
         alert(error);
