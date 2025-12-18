@@ -322,9 +322,7 @@ class Game {
           const Y = Math.floor(i / this.width);
           if (this.output[i] === outSelf.alphaColor) continue;
           const color = outSelf.LUT[this.output[i]];
-          outSelf.CTX.fillStyle = `rgb(${color.join(",")})`;
-          outSelf.CTX.fillRect(X, Y, 1, 1);
-          outSelf.CTX.stroke();
+          const index = i * 4;
           this.output[i] = outSelf.alphaColor;
         }
         this.noWriteIndex.fill(0);
